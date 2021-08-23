@@ -31,6 +31,9 @@ setup(
     },
     classifiers=[
         'Intended Audience :: Developers',
+        'Operating System :: MacOS :: MacOS X',
+        'Operating System :: POSIX :: Linux',
+        'Operating System :: Microsoft :: Windows',
         'License :: OSI Approved :: BSD License',
         'Programming Language :: Python',
         'Programming Language :: Python :: 3',
