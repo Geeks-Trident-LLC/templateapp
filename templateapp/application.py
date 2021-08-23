@@ -90,6 +90,19 @@ def create_msgbox(title=None, error=None, warning=None, info=None,
     return result
 
 
+def set_modal_dialog(dialog):
+    """set dialog to become a modal dialog
+
+    Parameters
+    ----------
+    dialog (tkinter.TK): a dialog or window application.
+    """
+    dialog.transient(dialog.master)
+    dialog.wait_visibility()
+    dialog.grab_set()
+    dialog.wait_window()
+
+
 class Application:
     def __init__(self):
         self._base_title = 'Template GUI'
