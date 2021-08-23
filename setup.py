@@ -15,7 +15,7 @@ setup(
     author_email='tuyen@geekstrident.com',
     maintainer='Tuyen Mathew Duong',
     maintainer_email='tuyen@geekstrident.com',
-    install_requires=[],
+    install_requires=['textfsm', 'regexapp'],
     url='https://github.com/Geeks-Trident-LLC/templateapp',
     packages=find_packages(
         exclude=(
