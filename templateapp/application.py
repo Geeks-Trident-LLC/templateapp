@@ -7,6 +7,7 @@ from tkinter import messagebox
 from os import path
 # import webbrowser
 from textwrap import dedent
+import platform
 
 from templateapp import version
 from templateapp import edition
@@ -149,6 +150,11 @@ class Data:
 
 class Application:
     def __init__(self):
+        # support platform: macOS, Linux, and Window
+        self.is_macos = platform.system() == 'Darwin'
+        self.is_linux = platform.system() == 'Linux'
+        self.is_window = platform.system() == 'Windows'
+
         self._base_title = 'Template GUI'
         self.root = tk.Tk()
         self.root.geometry('800x600+100+100')
