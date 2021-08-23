@@ -1,7 +1,7 @@
 """Module containing the logic for the Template application."""
 
 import tkinter as tk
-# from tkinter import ttk
+from tkinter import ttk
 # from tkinter import filedialog
 from tkinter import messagebox
 from os import path
@@ -154,6 +154,17 @@ class Application:
         self.is_macos = platform.system() == 'Darwin'
         self.is_linux = platform.system() == 'Linux'
         self.is_window = platform.system() == 'Windows'
+
+        # standardize tkinter component for macOS, Linux, and Window operating system
+        self.RadioButton = tk.Radiobutton if self.is_linux else ttk.Radiobutton
+        self.CheckBox = tk.Checkbutton if self.is_linux else ttk.Checkbutton
+        self.Label = ttk.Label
+        self.Frame = ttk.Frame
+        self.LabelFrame = ttk.LabelFrame
+        self.Button = ttk.Button
+        self.TextBox = ttk.Entry
+        self.TextArea = tk.Text
+        self.PanedWindow = ttk.PanedWindow
 
         self._base_title = 'Template GUI'
         self.root = tk.Tk()
