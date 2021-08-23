@@ -9,12 +9,11 @@ import tkinter as tk
 # import webbrowser
 # from textwrap import dedent
 
+from templateapp import version
+from templateapp import edition
 
-__version__ = '0.0.1'
-version = __version__
-
-__edition__ = 'Community Edition'
-edition = __edition__
+__version__ = version
+__edition__ = edition
 
 
 class Application:
