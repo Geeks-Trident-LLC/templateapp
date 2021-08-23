@@ -166,11 +166,26 @@ class Application:
         self.TextArea = tk.Text
         self.PanedWindow = ttk.PanedWindow
 
-        self._base_title = 'Template GUI'
+        self._base_title = 'TemplateApp {}'.format(edition)
         self.root = tk.Tk()
         self.root.geometry('800x600+100+100')
         self.root.minsize(200, 200)
         self.root.option_add('*tearOff', False)
+
+        self.set_title()
+
+    def set_title(self, node=None, title=''):
+        """Set a new title for tkinter component.
+
+        Parameters
+        ----------
+        node (tkinter): a tkinter component.
+        title (str): a title.  Default is empty.
+        """
+        node = node or self.root
+        btitle = self._base_title
+        title = '{} - {}'.format(title, btitle) if title else btitle
+        node.title(title)
 
     def run(self):
         """Launch template GUI."""
