@@ -19,6 +19,8 @@ class ParsedLine:
     ----------
     is_empty (bool): True if a line doesnt have data, otherwise False.
     is_a_word (bool): True if text is a single word, otherwise False.
+    is_not_containing_letter (bool): True if line is not containing any letter,
+            otherwise, False.
 
     Methods
     -------
@@ -42,6 +44,13 @@ class ParsedLine:
     @property
     def is_a_word(self):
         return bool(re.match(r'[a-z]\w+$', self.text.strip(), re.I))
+
+    @property
+    def is_not_containing_letter(self):
+        if self.is_empty:
+            return False
+
+        return bool(re.match(r'[^a-z0-9]+$', self.line, re.I))
 
     def build(self):
 
