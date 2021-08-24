@@ -21,13 +21,17 @@ class TestParsedLine:
         assert obj.ignore_case == ignore_case
 
     @pytest.mark.parametrize(
-        ('data', 'is_empty'),
+        ('data', 'is_empty', 'is_a_word'),
         [
-            ('', True),
-            ('  ', True),
-            ('abc xyz', False),
+            ('', True, False),
+            ('  ', True, False),
+            ('abc xyz', False, False),
+            ('abc', False, True),
+            ('abc_xyz', False, True),
+            ('abc.xyz', False, False),
         ]
     )
-    def test_parsedline_property(self, data, is_empty):
+    def test_parsedline_property(self, data, is_empty, is_a_word):
         obj = ParsedLine(data)
         assert obj.is_empty == is_empty
+        assert obj.is_a_word == is_a_word
