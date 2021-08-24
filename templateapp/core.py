@@ -43,7 +43,7 @@ class ParsedLine:
 
     @property
     def is_a_word(self):
-        return bool(re.match(r'[a-z]\w+$', self.text.strip(), re.I))
+        return bool(re.match(r'[a-z]\w+$', self.text.rstrip(), re.I))
 
     @property
     def is_not_containing_letter(self):
