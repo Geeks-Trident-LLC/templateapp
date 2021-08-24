@@ -2,12 +2,11 @@
 
 import re
 
-
 from templateapp.exceptions import TemplateParsedLineError
 
 
 class ParsedLine:
-    """
+    """Parse line to template format
 
     Attributes
     ----------
@@ -19,8 +18,9 @@ class ParsedLine:
     Properties
     ----------
     is_empty (bool): True if a line doesnt have data, otherwise False.
-    has_template_op (bool): True if line has template operator, otherwise False.
-    is_ignore_case (bool): True if a line need case insensitive flag.
+    is_a_word (bool): True if text is a single word, otherwise False.
+    is_not_containing_letter (bool): True if line is not containing any letter,
+            otherwise, False.
 
     Methods
     -------
@@ -39,15 +39,18 @@ class ParsedLine:
 
     @property
     def is_empty(self):
-        return not bool(self.line)
+        return not bool(self.line.strip())
 
     @property
-    def has_template_op(self):
-        return bool(self.template_op)
+    def is_a_word(self):
+        return bool(re.match(r'[a-z]\w+$', self.text.strip(), re.I))
 
     @property
-    def is_ignore_case(self):
-        return self.ignore_case
+    def is_not_containing_letter(self):
+        if self.is_empty:
+            return False
+
+        return bool(re.match(r'[^a-z0-9]+$', self.line, re.I))
 
     def build(self):
 
