@@ -39,3 +39,49 @@ class TestParsedLine:
         assert obj.is_empty == is_empty
         assert obj.is_a_word == is_a_word
         assert obj.is_not_containing_letter == is_not_containing_letter
+
+    @pytest.mark.parametrize(
+        ('data', 'expected_result'),
+        [
+            (
+                '',     # data
+                ''      # expected_result
+            ),
+            (
+                '  ',   # data
+                ''      # expected_result
+            ),
+            (
+                'Start',    # data
+                'Start'     # expected_result
+            ),
+            (
+                '===   ==========   ======',    # data
+                '  ^=== +========== +======'    # expected_result
+            ),
+            (
+                '===   ==========   ====== end()',  # data
+                '  ^=== +========== +======\\s*$$'  # expected_result
+            ),
+            (
+                'Today temperature is digits(var_degree) celsius.',     # data
+                '  ^Today temperature is ${degree} celsius\\.'          # expected_result
+            ),
+            (
+                'Today temperature is digits(var_degree) word(var_unit).',  # data
+                '  ^Today temperature is ${degree} ${unit}\\.'              # expected_result
+            ),
+            (
+                'Today temperature is digits(var_degree) word(var_unit). -> Record',    # data
+                '  ^Today temperature is ${degree} ${unit}\\. -> Record'                # expected_result
+            ),
+            (
+                'Today temperature is digits(var_degree, Filldown) word(var_unit). -> Record',
+                '  ^Today temperature is ${degree} ${unit}\\. -> Record'
+            ),
+        ]
+    )
+    def test_get_line_statement(self, data, expected_result):
+        obj = ParsedLine(data)
+        result = obj.get_statement()
+        assert result == expected_result

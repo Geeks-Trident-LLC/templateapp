@@ -2,6 +2,8 @@
 
 import re
 
+from regexapp import LinePattern
+
 from templateapp.exceptions import TemplateParsedLineError
 
 
@@ -14,6 +16,7 @@ class ParsedLine:
     line (str): a line data.
     template_op (str): template operator.
     ignore_case (bool): a case insensitive flag.
+    variables (list): a list of variables.
 
     Properties
     ----------
@@ -25,6 +28,7 @@ class ParsedLine:
     Methods
     -------
     build() -> None
+    get_statement() -> str
 
     Raises
     -------
@@ -35,25 +39,66 @@ class ParsedLine:
         self.line = ''
         self.template_op = ''
         self.ignore_case = False
+        self.variables = list()
         self.build()
 
     @property
     def is_empty(self):
+        """return True if a line is empty"""
         return not bool(self.line.strip())
 
     @property
     def is_a_word(self):
-        return bool(re.match(r'[a-z]\w+$', self.text.strip(), re.I))
+        """return True if text is a single word"""
+        return bool(re.match(r'[a-z]\w+$', self.text.rstrip(), re.I))
 
     @property
     def is_not_containing_letter(self):
+        """return True if a line doesn't contain any alphanum"""
         if self.is_empty:
             return False
 
         return bool(re.match(r'[^a-z0-9]+$', self.line, re.I))
 
-    def build(self):
+    def get_statement(self):
+        """return a statement for building template
 
+        Returns
+        -------
+        str: a statement for template
+        """
+        if self.is_empty:
+            return ''
+
+        if self.is_a_word:
+            return self.text
+
+        pat_obj = LinePattern(self.line, ignore_case=self.ignore_case)
+
+        if pat_obj.variables:
+            self.variables = pat_obj.variables[:]
+            statement = pat_obj.statement
+        else:
+            try:
+                re.compile(self.line)
+                if re.search(r'\s', self.line):
+                    statement = pat_obj
+                else:
+                    statement = self.line
+            except Exception as ex:     # noqa
+                statement = pat_obj
+
+        statement = statement.replace('(?i)^', '^(?i)')
+        spacer = '  ' if statement.startswith('^') else '  ^'
+        statement = '{}{}'.format(spacer, statement)
+        if statement.endswith('$'):
+            statement = '{}$'.format(statement)
+        if self.template_op:
+            statement = '{} -> {}'.format(statement, self.template_op)
+        return statement
+
+    def build(self):
+        """parse line to reapply for building template"""
         lst = self.text.rsplit(' -> ', 1)
         if len(lst) == 2:
             self.template_op = lst[-1].strip()
