@@ -66,6 +66,12 @@ def tc_info():
         script = script.replace('_datetime_', dt_str)
         test_info.expected_unittest_script = script
 
+    filename = str(PurePath(base_dir, 'pytest_script.txt'))
+    with open(filename) as stream:
+        script = stream.read()
+        script = script.replace('_datetime_', dt_str)
+        test_info.expected_pytest_script = script
+
     yield test_info
 
 
@@ -210,5 +216,16 @@ class TestTemplateBuilder:
             email=tc_info.email,
             company=tc_info.company,
         )
-        unittest_script = factory.create_unittest()
+        unittest_script = factory.create_unittest_script()
         assert unittest_script == tc_info.expected_unittest_script
+
+    def test_creating_pytest_script(self, tc_info):
+        factory = TemplateBuilder(
+            user_data=tc_info.user_data,
+            test_data=tc_info.test_data,
+            author=tc_info.author,
+            email=tc_info.email,
+            company=tc_info.company,
+        )
+        pytest_script = factory.create_pytest_script()
+        assert pytest_script == tc_info.expected_pytest_script
