@@ -72,6 +72,12 @@ def tc_info():
         script = script.replace('_datetime_', dt_str)
         test_info.expected_pytest_script = script
 
+    filename = str(PurePath(base_dir, 'snippet_script.txt'))
+    with open(filename) as stream:
+        script = stream.read()
+        script = script.replace('_datetime_', dt_str)
+        test_info.expected_snippet_script = script
+
     yield test_info
 
 
@@ -229,3 +235,14 @@ class TestTemplateBuilder:
         )
         pytest_script = factory.create_pytest_script()
         assert pytest_script == tc_info.expected_pytest_script
+
+    def test_creating_snippet_script(self, tc_info):
+        factory = TemplateBuilder(
+            user_data=tc_info.user_data,
+            test_data=tc_info.test_data,
+            author=tc_info.author,
+            email=tc_info.email,
+            company=tc_info.company,
+        )
+        snippet_script = factory.create_snippet_script()
+        assert snippet_script == tc_info.expected_snippet_script
