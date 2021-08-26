@@ -3,12 +3,17 @@
 - allow end-user to create template or test script on GUI application.
 """
 
-__version__ = '0.0.1'
-version = __version__
-__edition__ = 'Community'
-edition = __edition__
+from templateapp.core import ParsedLine
+from templateapp.core import TemplateBuilder
+from templateapp.config import version
+from templateapp.config import edition
+
+__version__ = version
+__edition__ = edition
 
 __all__ = [
+    'ParsedLine',
+    'TemplateBuilder',
     'version',
     'edition',
 ]
