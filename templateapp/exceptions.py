@@ -7,3 +7,7 @@ class TemplateError(Exception):
 
 class TemplateParsedLineError(TemplateError):
     """Use to capture error parsed line for template builder."""
+
+
+class TemplateBuilderError(Exception):
+    """Use to capture error template construction."""
