@@ -1,6 +1,7 @@
 import pytest
 from textwrap import dedent
 from datetime import datetime
+from pathlib import Path, PurePath
 
 from templateapp import ParsedLine
 from templateapp import TemplateBuilder
@@ -56,6 +57,26 @@ def tc_info():
     test_info.author = 'user1'
     test_info.email = 'user1@abcxyz.com'
     test_info.company = 'ABC XYZ LLC'
+
+    base_dir = str(PurePath(Path(__file__).parent, 'data'))
+
+    filename = str(PurePath(base_dir, 'unittest_script.txt'))
+    with open(filename) as stream:
+        script = stream.read()
+        script = script.replace('_datetime_', dt_str)
+        test_info.expected_unittest_script = script
+
+    filename = str(PurePath(base_dir, 'pytest_script.txt'))
+    with open(filename) as stream:
+        script = stream.read()
+        script = script.replace('_datetime_', dt_str)
+        test_info.expected_pytest_script = script
+
+    filename = str(PurePath(base_dir, 'snippet_script.txt'))
+    with open(filename) as stream:
+        script = stream.read()
+        script = script.replace('_datetime_', dt_str)
+        test_info.expected_snippet_script = script
 
     yield test_info
 
@@ -192,3 +213,36 @@ class TestTemplateBuilder:
             expected_result=tc_info.expected_result
         )
         assert is_verified
+
+    def test_creating_unittest_script(self, tc_info):
+        factory = TemplateBuilder(
+            user_data=tc_info.user_data,
+            test_data=tc_info.test_data,
+            author=tc_info.author,
+            email=tc_info.email,
+            company=tc_info.company,
+        )
+        unittest_script = factory.create_unittest_script()
+        assert unittest_script == tc_info.expected_unittest_script
+
+    def test_creating_pytest_script(self, tc_info):
+        factory = TemplateBuilder(
+            user_data=tc_info.user_data,
+            test_data=tc_info.test_data,
+            author=tc_info.author,
+            email=tc_info.email,
+            company=tc_info.company,
+        )
+        pytest_script = factory.create_pytest_script()
+        assert pytest_script == tc_info.expected_pytest_script
+
+    def test_creating_snippet_script(self, tc_info):
+        factory = TemplateBuilder(
+            user_data=tc_info.user_data,
+            test_data=tc_info.test_data,
+            author=tc_info.author,
+            email=tc_info.email,
+            company=tc_info.company,
+        )
+        snippet_script = factory.create_snippet_script()
+        assert snippet_script == tc_info.expected_snippet_script
