@@ -19,6 +19,20 @@ import logging
 logger = logging.getLogger(__file__)
 
 
+def save_file(filename, content):
+    """Save data to file
+
+    Parameters
+    ----------
+    filename (str): a file name
+    content (str): a file content
+    """
+    filename = str(filename).strip()
+    if filename:
+        with open(filename, 'w') as stream:
+            stream.write(content)
+
+
 class ParsedLine:
     """Parse line to template format
 
@@ -141,6 +155,7 @@ class TemplateBuilder:
     email (str): author email.  Default is empty.
     company (str): company name.  Default is empty.
     description (str): a description about template.  Default is empty.
+    filename (str): a saving file name for a generated test script to file name.
     other_options (dict): other options for Pro or Enterprise edition.
 
     Methods
@@ -151,9 +166,9 @@ class TemplateBuilder:
     build() -> None
     show_debug_info(test_result=None, expected_result=None) -> None
     verify(expected_rows_count=None, expected_result=None, debug=False) -> bool
-    create_unittest_script() -> str
-    create_pytest_script() -> str
-    create_snippet_script() -> str
+    create_unittest() -> str
+    create_pytest() -> str
+    create_python_test() -> str
 
     Raises
     ------
@@ -163,7 +178,7 @@ class TemplateBuilder:
 
     def __init__(self, test_data='', user_data='', namespace='',
                  author='', email='', company='', description='',
-                 **other_options):
+                 filename='', **other_options):
         self.test_data = TemplateBuilder.convert_to_string(test_data)
         self.user_data = TemplateBuilder.convert_to_string(user_data)
         self.namespace = str(namespace)
@@ -171,6 +186,7 @@ class TemplateBuilder:
         self.email = str(email)
         self.company = str(company)
         self.description = TemplateBuilder.convert_to_string(description)
+        self.filename = str(filename)
         self.other_options = other_options
         self.variables = []
         self.statements = []
@@ -353,7 +369,7 @@ class TemplateBuilder:
             error = '{}: {}'.format(type(ex).__name__, ex)
             raise TemplateBuilderError(error)
 
-    def create_unittest_script(self):
+    def create_unittest(self):
         """return a Python unittest script
 
         Raises
@@ -395,9 +411,10 @@ class TemplateBuilder:
             test_data=enclose_string(self.test_data)
         )
 
+        save_file(self.filename, script)
         return script
 
-    def create_pytest_script(self):
+    def create_pytest(self):
         """return a Python pytest script
 
         Raises
@@ -439,9 +456,10 @@ class TemplateBuilder:
             test_data=enclose_string(self.test_data)
         )
 
+        save_file(self.filename, script)
         return script
 
-    def create_snippet_script(self):
+    def create_python_test(self):
         """return a Python snippet script
 
         Raises
@@ -505,4 +523,5 @@ class TemplateBuilder:
             test_data=enclose_string(self.test_data)
         )
 
+        save_file(self.filename, script)
         return script
