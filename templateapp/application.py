@@ -416,7 +416,7 @@ class Application:
 
         settings = tk.Toplevel(self.root)
         self.set_title(node=settings, title='Settings')
-        width = 544 if self.is_macos else 500 if self.is_linux else 370
+        width = 520 if self.is_macos else 474 if self.is_linux else 370
         height = 260
         x, y = get_relative_center_location(self.root, width, height)
         settings.geometry('{}x{}+{}+{}'.format(width, height, x, y))
