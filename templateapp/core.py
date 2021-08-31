@@ -155,6 +155,7 @@ class TemplateBuilder:
     email (str): author email.  Default is empty.
     company (str): company name.  Default is empty.
     description (str): a description about template.  Default is empty.
+    filename (str): a saving file name for a generated test script to file name.
     other_options (dict): other options for Pro or Enterprise edition.
 
     Methods
@@ -165,9 +166,9 @@ class TemplateBuilder:
     build() -> None
     show_debug_info(test_result=None, expected_result=None) -> None
     verify(expected_rows_count=None, expected_result=None, debug=False) -> bool
-    create_unittest_script() -> str
-    create_pytest_script() -> str
-    create_snippet_script() -> str
+    create_unittest() -> str
+    create_pytest() -> str
+    create_python_test() -> str
 
     Raises
     ------
@@ -177,7 +178,7 @@ class TemplateBuilder:
 
     def __init__(self, test_data='', user_data='', namespace='',
                  author='', email='', company='', description='',
-                 **other_options):
+                 filename='', **other_options):
         self.test_data = TemplateBuilder.convert_to_string(test_data)
         self.user_data = TemplateBuilder.convert_to_string(user_data)
         self.namespace = str(namespace)
@@ -185,6 +186,7 @@ class TemplateBuilder:
         self.email = str(email)
         self.company = str(company)
         self.description = TemplateBuilder.convert_to_string(description)
+        self.filename = str(filename)
         self.other_options = other_options
         self.variables = []
         self.statements = []
@@ -409,6 +411,7 @@ class TemplateBuilder:
             test_data=enclose_string(self.test_data)
         )
 
+        save_file(self.filename, script)
         return script
 
     def create_pytest(self):
@@ -453,6 +456,7 @@ class TemplateBuilder:
             test_data=enclose_string(self.test_data)
         )
 
+        save_file(self.filename, script)
         return script
 
     def create_python_test(self):
@@ -519,4 +523,5 @@ class TemplateBuilder:
             test_data=enclose_string(self.test_data)
         )
 
+        save_file(self.filename, script)
         return script
