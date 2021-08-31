@@ -397,7 +397,7 @@ class TemplateBuilder:
 
         return script
 
-    def create_pytest_script(self):
+    def create_pytest(self):
         """return a Python pytest script
 
         Raises

@@ -233,7 +233,7 @@ class TestTemplateBuilder:
             email=tc_info.email,
             company=tc_info.company,
         )
-        pytest_script = factory.create_pytest_script()
+        pytest_script = factory.create_pytest()
         assert pytest_script == tc_info.expected_pytest_script
 
     def test_creating_snippet_script(self, tc_info):
