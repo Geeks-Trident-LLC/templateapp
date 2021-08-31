@@ -543,9 +543,9 @@ class Application:
         self.result_frame = self.Frame(
             self.panedwindow, width=600, height=350, relief=tk.RIDGE
         )
-        self.panedwindow.add(self.text_frame, weight=4)
+        self.panedwindow.add(self.text_frame, weight=2)
         self.panedwindow.add(self.entry_frame)
-        self.panedwindow.add(self.result_frame, weight=5)
+        self.panedwindow.add(self.result_frame, weight=7)
 
     def build_textarea(self):
         """Build input text for regex GUI."""
