@@ -441,7 +441,7 @@ class TemplateBuilder:
 
         return script
 
-    def create_snippet_script(self):
+    def create_python_test(self):
         """return a Python snippet script
 
         Raises

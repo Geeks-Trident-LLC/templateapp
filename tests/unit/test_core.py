@@ -244,5 +244,5 @@ class TestTemplateBuilder:
             email=tc_info.email,
             company=tc_info.company,
         )
-        snippet_script = factory.create_snippet_script()
+        snippet_script = factory.create_python_test()
         assert snippet_script == tc_info.expected_snippet_script
