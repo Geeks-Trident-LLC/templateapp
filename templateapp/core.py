@@ -19,6 +19,20 @@ import logging
 logger = logging.getLogger(__file__)
 
 
+def save_file(filename, content):
+    """Save data to file
+
+    Parameters
+    ----------
+    filename (str): a file name
+    content (str): a file content
+    """
+    filename = str(filename).strip()
+    if filename:
+        with open(filename, 'w') as stream:
+            stream.write(content)
+
+
 class ParsedLine:
     """Parse line to template format
 
