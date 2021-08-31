@@ -139,7 +139,7 @@ class TestParsedLine:
             ),
             (
                 '===   ==========   ====== end()',  # data
-                '  ^=== +========== +======\\s*$$'  # expected_result
+                '  ^=== +========== +======$$'  # expected_result
             ),
             (
                 'Today temperature is digits(var_degree) celsius.',     # data
@@ -222,7 +222,7 @@ class TestTemplateBuilder:
             email=tc_info.email,
             company=tc_info.company,
         )
-        unittest_script = factory.create_unittest_script()
+        unittest_script = factory.create_unittest()
         assert unittest_script == tc_info.expected_unittest_script
 
     def test_creating_pytest_script(self, tc_info):

@@ -353,7 +353,7 @@ class TemplateBuilder:
             error = '{}: {}'.format(type(ex).__name__, ex)
             raise TemplateBuilderError(error)
 
-    def create_unittest_script(self):
+    def create_unittest(self):
         """return a Python unittest script
 
         Raises
