@@ -809,6 +809,8 @@ class Application:
                     self.snapshot.update(template=factory.template)
                     self.snapshot.update(is_built=True)
                     self.test_data_btn_var.set('Test Data')
+                    self.save_as_btn.config(state=tk.NORMAL)
+                    self.copy_text_btn.config(state=tk.NORMAL)
                     self.set_textarea(self.result_textarea, factory.template)
                 except Exception as ex:
                     error = '{}: {}'.format(type(ex).__name__, ex)
@@ -824,6 +826,8 @@ class Application:
                 if template_name:
                     user_template = UserTemplate()
                     template = user_template.search(template_name)
+                    self.save_as_btn.config(state=tk.NORMAL)
+                    self.copy_text_btn.config(state=tk.NORMAL)
                     self.test_data_btn_var.set('Test Data')
                     if template:
                         self.snapshot.update(template=template)
