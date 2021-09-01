@@ -808,6 +808,7 @@ class Application:
                     self.snapshot.update(result=factory.template)
                     self.snapshot.update(template=factory.template)
                     self.snapshot.update(is_built=True)
+                    self.test_data_btn_var.set('Test Data')
                     self.set_textarea(self.result_textarea, factory.template)
                 except Exception as ex:
                     error = '{}: {}'.format(type(ex).__name__, ex)
@@ -823,6 +824,7 @@ class Application:
                 if template_name:
                     user_template = UserTemplate()
                     template = user_template.search(template_name)
+                    self.test_data_btn_var.set('Test Data')
                     if template:
                         self.snapshot.update(template=template)
                         self.snapshot.update(result=template)
@@ -1064,6 +1066,7 @@ class Application:
                     pretty_data = pformat(rows)
                     result += fmt.format(pretty_data) if result else pretty_data
 
+                self.test_data_btn_var.set('Test Data')
                 self.snapshot.update(result=result)
                 self.set_textarea(self.result_textarea, result)
             except Exception as ex:
