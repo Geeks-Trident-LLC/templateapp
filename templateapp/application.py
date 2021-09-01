@@ -403,8 +403,9 @@ class Application:
 
         # datastore
         self.snapshot = Snapshot()
+        self.snapshot.update(user_data='')
         self.snapshot.update(test_data=None)
-        self.snapshot.update(test_result='')
+        self.snapshot.update(result='')
         self.snapshot.update(template='')
         self.snapshot.update(is_built=False)
 
@@ -803,7 +804,8 @@ class Application:
                 try:
                     kwargs = self.get_template_args()
                     factory = TemplateBuilder(user_data=user_data, **kwargs)
-                    self.snapshot.update(test_result=factory.template)
+                    self.snapshot.update(user_data=user_data)
+                    self.snapshot.update(result=factory.template)
                     self.snapshot.update(template=factory.template)
                     self.snapshot.update(is_built=True)
                     self.set_textarea(self.result_textarea, factory.template)
@@ -823,10 +825,10 @@ class Application:
                     template = user_template.search(template_name)
                     if template:
                         self.snapshot.update(template=template)
-                        self.snapshot.update(test_result=template)
+                        self.snapshot.update(result=template)
                         self.set_textarea(self.result_textarea, template)
                     else:
-                        self.snapshot.update(test_result=user_template.status)
+                        self.snapshot.update(result=user_template.status)
                         self.set_textarea(self.result_textarea, user_template.status)
                 else:
                     title = 'Empty Template Name'
@@ -849,8 +851,9 @@ class Application:
             self.result_btn.config(state=tk.DISABLED)
             self.store_btn.config(state=tk.DISABLED)
 
+            self.snapshot.update(user_data='')
             self.snapshot.update(test_data=None)
-            self.snapshot.update(test_result='')
+            self.snapshot.update(result='')
             self.snapshot.update(template='')
             self.snapshot.update(is_built=False)
 
@@ -877,7 +880,7 @@ class Application:
                 self.test_data_btn_var.set('Test Data')
                 self.set_textarea(self.result_textarea, '')
                 self.snapshot.update(test_data=data)
-                self.snapshot.update(test_result='')
+                self.snapshot.update(result='')
 
                 title = '<<PASTE - Clipboard>>'
                 self.set_textarea(self.textarea, data, title=title)
@@ -915,7 +918,7 @@ class Application:
                 script = factory.create_python_test()
                 self.set_textarea(self.result_textarea, script)
                 self.test_data_btn_var.set('Test Data')
-                self.snapshot.update(test_result=script)
+                self.snapshot.update(result=script)
                 self.save_as_btn.config(state=tk.NORMAL)
                 self.copy_text_btn.config(state=tk.NORMAL)
             except Exception as ex:
@@ -950,7 +953,7 @@ class Application:
                 script = factory.create_unittest()
                 self.set_textarea(self.result_textarea, script)
                 self.test_data_btn_var.set('Test Data')
-                self.snapshot.update(test_result=script)
+                self.snapshot.update(result=script)
                 self.save_as_btn.config(state=tk.NORMAL)
                 self.copy_text_btn.config(state=tk.NORMAL)
             except Exception as ex:
@@ -985,7 +988,7 @@ class Application:
                 script = factory.create_pytest()
                 self.set_textarea(self.result_textarea, script)
                 self.test_data_btn_var.set('Test Data')
-                self.snapshot.update(test_result=script)
+                self.snapshot.update(result=script)
                 self.save_as_btn.config(state=tk.NORMAL)
                 self.copy_text_btn.config(state=tk.NORMAL)
             except Exception as ex:
@@ -1011,7 +1014,7 @@ class Application:
                 self.test_data_btn_var.set('Test Data')
                 self.set_textarea(
                     self.result_textarea,
-                    self.snapshot.test_result  # noqa
+                    self.snapshot.result  # noqa
                 )
 
         def callback_result_btn():
@@ -1024,31 +1027,48 @@ class Application:
                 )
                 return
 
-            stream = StringIO(self.snapshot.template)   # noqa
-            parser = TextFSM(stream)
-            rows = parser.ParseTextToDicts(self.snapshot.test_data)     # noqa
+            user_data = Application.get_textarea(self.textarea)
+            if not user_data:
+                create_msgbox(
+                    title='Empty Data',
+                    error="Can NOT build regex pattern without data."
+                )
+                return
 
-            result = ''
-            test_data = self.snapshot.test_data
-            template = self.snapshot.template
-            fmt = '\n\n{}\n\n{{}}'.format('=' * 20)
+            try:
+                kwargs = self.get_template_args()
+                factory = TemplateBuilder(user_data=user_data, **kwargs)
+                self.snapshot.update(user_data=user_data)
+                self.snapshot.update(template=factory.template)
+                self.snapshot.update(is_built=True)
+                stream = StringIO(factory.template)  # noqa
+                parser = TextFSM(stream)
+                rows = parser.ParseTextToDicts(self.snapshot.test_data)  # noqa
 
-            if self.test_data_chkbox_var.get() and test_data:     # noqa
-                result = str(test_data)   # noqa
+                result = ''
+                test_data = self.snapshot.test_data  # noqa
+                template = factory.template
+                fmt = '\n\n<<{}>>\n\n{{}}'.format('=' * 20)
 
-            if self.template_chkbox_var.get() and template:
-                result += fmt.format(template) if result else template
+                if self.template_chkbox_var.get() and template:
+                    result += fmt.format(template) if result else template
 
-            if self.tabular_chkbox_var.get():
-                tabular_obj = Tabular(rows)
-                tabular_data = tabular_obj.get()
-                result += fmt.format(tabular_data) if result else tabular_data
-            else:
-                pretty_data = pformat(rows)
-                result += fmt.format(pretty_data) if result else pretty_data
+                if self.test_data_chkbox_var.get() and test_data:  # noqa
+                    result += fmt.format(test_data) if result else test_data
 
-            self.snapshot.update(test_result=result)
-            self.set_textarea(self.result_textarea, result)
+                if self.tabular_chkbox_var.get():
+                    tabular_obj = Tabular(rows)
+                    tabular_data = tabular_obj.get()
+                    result += fmt.format(tabular_data) if result else tabular_data
+                else:
+                    pretty_data = pformat(rows)
+                    result += fmt.format(pretty_data) if result else pretty_data
+
+                self.snapshot.update(result=result)
+                self.set_textarea(self.result_textarea, result)
+            except Exception as ex:
+                error = '{}: {}'.format(type(ex).__name__, ex)
+                create_msgbox(title='RegexBuilder Error', error=error)
 
         def callback_store_btn():
             raise Exception('TODO: Need to implement callback_store_btn')
