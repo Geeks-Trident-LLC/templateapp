@@ -445,7 +445,6 @@ class Application:
         self.author_var.set('')
         self.email_var.set('')
         self.company_var.set('')
-        self.template_name_var.set('')
         self.description_var.set('')
 
     @classmethod
@@ -628,7 +627,7 @@ class Application:
 
         self.Label(
             lframe_args, text='author'
-        ).grid(row=0, column=0, columnspan=2, padx=2, pady=pady, sticky=tk.W)
+        ).grid(row=0, column=0, columnspan=2, padx=2, pady=pady, sticky=tk.W+tk.N)
         self.TextBox(
             lframe_args, width=45,
             textvariable=self.author_var
@@ -636,7 +635,7 @@ class Application:
 
         self.Label(
             lframe_args, text='email'
-        ).grid(row=1, column=0, columnspan=2, padx=2, pady=pady, sticky=tk.W)
+        ).grid(row=1, column=0, columnspan=2, padx=2, pady=pady, sticky=tk.W+tk.N)
         self.TextBox(
             lframe_args, width=45,
             textvariable=self.email_var
@@ -644,23 +643,15 @@ class Application:
 
         self.Label(
             lframe_args, text='company'
-        ).grid(row=2, column=0, columnspan=2, padx=2, pady=pady, sticky=tk.W)
+        ).grid(row=2, column=0, columnspan=2, padx=2, pady=pady, sticky=tk.W+tk.N)
         self.TextBox(
             lframe_args, width=45,
             textvariable=self.company_var
         ).grid(row=2, column=2, columnspan=4, padx=2, pady=pady, sticky=tk.W)
 
         self.Label(
-            lframe_args, text='namespace'
-        ).grid(row=3, column=0, columnspan=2, padx=2, pady=pady, sticky=tk.W)
-        self.TextBox(
-            lframe_args, width=45,
-            textvariable=self.template_name_var
-        ).grid(row=3, column=2, columnspan=4, padx=2, pady=pady, sticky=tk.W)
-
-        self.Label(
             lframe_args, text='filename'
-        ).grid(row=4, column=0, columnspan=2, padx=2, pady=pady, sticky=tk.W)
+        ).grid(row=4, column=0, columnspan=2, padx=2, pady=pady, sticky=tk.W+tk.N)
         self.TextBox(
             lframe_args, width=45,
             textvariable=self.filename_var
@@ -668,7 +659,7 @@ class Application:
 
         self.Label(
             lframe_args, text='description'
-        ).grid(row=5, column=0, columnspan=2, padx=2, pady=pady, sticky=tk.W)
+        ).grid(row=5, column=0, columnspan=2, padx=2, pady=pady, sticky=tk.W+tk.N)
         self.TextBox(
             lframe_args, width=45,
             textvariable=self.description_var
