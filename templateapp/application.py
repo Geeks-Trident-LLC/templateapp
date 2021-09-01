@@ -16,6 +16,9 @@ import yaml
 from io import StringIO
 from textfsm import TextFSM
 
+from pprint import pformat
+from dlquery.collection import Tabular
+
 from templateapp import TemplateBuilder
 
 from templateapp import version
@@ -420,6 +423,12 @@ class Application:
         self.description_var = tk.StringVar()
         self.search_chkbox_var = tk.BooleanVar()
 
+        # variables: app
+        self.test_data_chkbox_var = tk.BooleanVar()
+        self.template_chkbox_var = tk.BooleanVar()
+        self.tabular_chkbox_var = tk.BooleanVar()
+        self.tabular_chkbox_var.set(True)
+
         # method call
         self.set_title()
         self.build_menu()
@@ -446,6 +455,10 @@ class Application:
         self.email_var.set('')
         self.company_var.set('')
         self.description_var.set('')
+
+        self.test_data_chkbox_var.set(False)
+        self.template_chkbox_var.set(False)
+        self.tabular_chkbox_var.set(True)
 
     @classmethod
     def get_textarea(cls, node):
@@ -608,7 +621,7 @@ class Application:
         settings = tk.Toplevel(self.root)
         self.set_title(node=settings, title='Settings')
         width = 520 if self.is_macos else 474 if self.is_linux else 370
-        height = 260
+        height = 240
         x, y = get_relative_center_location(self.root, width, height)
         settings.geometry('{}x{}+{}+{}'.format(width, height, x, y))
         settings.resizable(False, False)
@@ -618,10 +631,10 @@ class Application:
 
         # Settings - Arguments
         lframe_args = self.LabelFrame(
-            top_frame, height=360, width=380,
+            top_frame, height=100, width=380,
             text='Arguments'
         )
-        lframe_args.grid(row=0, column=0, padx=10, pady=10, sticky=tk.W)
+        lframe_args.grid(row=0, column=0, padx=10, pady=(5, 0), sticky=tk.W)
 
         pady = 0 if self.is_macos else 1
 
@@ -665,11 +678,36 @@ class Application:
             textvariable=self.description_var
         ).grid(row=5, column=2, columnspan=4, padx=2, pady=(pady, 10), sticky=tk.W)
 
+        # Settings - Arguments
+        lframe_app = self.LabelFrame(
+            top_frame, height=120, width=380,
+            text='App'
+        )
+        lframe_app.grid(row=1, column=0, padx=10, pady=1, sticky=tk.W+tk.N)
+
+        self.CheckBox(
+            lframe_app, text='Test Data',
+            onvalue=True, offvalue=False,
+            variable=self.test_data_chkbox_var
+        ).grid(row=0, column=0, padx=2)
+
+        self.CheckBox(
+            lframe_app, text='Template',
+            onvalue=True, offvalue=False,
+            variable=self.template_chkbox_var
+        ).grid(row=0, column=1, padx=20)
+
+        self.CheckBox(
+            lframe_app, text='Tabular',
+            onvalue=True, offvalue=False,
+            variable=self.tabular_chkbox_var
+        ).grid(row=0, column=2, padx=2)
+
         # OK and Default buttons
         frame = self.Frame(
             top_frame, height=14, width=380
         )
-        frame.grid(row=2, column=0, padx=10, pady=10, sticky=tk.E + tk.S)
+        frame.grid(row=2, column=0, padx=10, pady=(10, 5), sticky=tk.E+tk.S)
 
         self.Button(
             frame, text='Default',
@@ -765,6 +803,7 @@ class Application:
                 try:
                     kwargs = self.get_template_args()
                     factory = TemplateBuilder(user_data=user_data, **kwargs)
+                    self.snapshot.update(test_result=factory.template)
                     self.snapshot.update(template=factory.template)
                     self.snapshot.update(is_built=True)
                     self.set_textarea(self.result_textarea, factory.template)
@@ -784,8 +823,10 @@ class Application:
                     template = user_template.search(template_name)
                     if template:
                         self.snapshot.update(template=template)
+                        self.snapshot.update(test_result=template)
                         self.set_textarea(self.result_textarea, template)
                     else:
+                        self.snapshot.update(test_result=user_template.status)
                         self.set_textarea(self.result_textarea, user_template.status)
                 else:
                     title = 'Empty Template Name'
@@ -814,6 +855,7 @@ class Application:
             self.snapshot.update(is_built=False)
 
             self.test_data_btn_var.set('Test Data')
+            self.build_btn_var.set('Build')
             self.template_name_var.set('')
             self.search_chkbox_var.set(False)
             # self.root.clipboard_clear()
@@ -835,6 +877,7 @@ class Application:
                 self.test_data_btn_var.set('Test Data')
                 self.set_textarea(self.result_textarea, '')
                 self.snapshot.update(test_data=data)
+                self.snapshot.update(test_result='')
 
                 title = '<<PASTE - Clipboard>>'
                 self.set_textarea(self.textarea, data, title=title)
@@ -984,7 +1027,28 @@ class Application:
             stream = StringIO(self.snapshot.template)   # noqa
             parser = TextFSM(stream)
             rows = parser.ParseTextToDicts(self.snapshot.test_data)     # noqa
-            self.set_textarea(self.result_textarea, rows)
+
+            result = ''
+            test_data = self.snapshot.test_data
+            template = self.snapshot.template
+            fmt = '\n\n{}\n\n{{}}'.format('=' * 20)
+
+            if self.test_data_chkbox_var.get() and test_data:     # noqa
+                result = str(test_data)   # noqa
+
+            if self.template_chkbox_var.get() and template:
+                result += fmt.format(template) if result else template
+
+            if self.tabular_chkbox_var.get():
+                tabular_obj = Tabular(rows)
+                tabular_data = tabular_obj.get()
+                result += fmt.format(tabular_data) if result else tabular_data
+            else:
+                pretty_data = pformat(rows)
+                result += fmt.format(pretty_data) if result else pretty_data
+
+            self.snapshot.update(test_result=result)
+            self.set_textarea(self.result_textarea, result)
 
         def callback_store_btn():
             raise Exception('TODO: Need to implement callback_store_btn')
