@@ -185,8 +185,8 @@ class UserTemplate:
     is_exist() -> bool
     create(confirmed=True) -> bool
     read() -> str
-    search(namespace) -> str
-    write(namespace, data) -> str
+    search(template_name) -> str
+    write(template_name, data) -> str
     """
     def __init__(self):
         self.filename = str(PurePath(Path.home(), '.templateapp', 'user_templates.yaml'))
@@ -249,8 +249,17 @@ class UserTemplate:
             create_msgbox(title=title, error=error)
             return ''
 
-    def search(self, namespace):
-        """search """
+    def search(self, template_name):
+        """search template via template_name
+
+        Parameters
+        ----------
+        template_name (str): a template name
+
+        Returns
+        -------
+        str: a template content
+        """
         self.status = ''
         if self.is_exist():
             with open(self.filename) as stream:
@@ -260,8 +269,8 @@ class UserTemplate:
                     yaml_obj = dict()
 
                 if isinstance(yaml_obj, dict):
-                    if namespace in yaml_obj:
-                        return yaml_obj.get(namespace)
+                    if template_name in yaml_obj:
+                        return yaml_obj.get(template_name)
                     else:
                         self.status = 'NOT_FOUND'
                         return ''
@@ -278,13 +287,24 @@ class UserTemplate:
             create_msgbox(title=title, error=error)
             return ''
 
-    def write(self, namespace, data):
+    def write(self, template_name, template):
+        """store template to /home_dir/.templateapp/user_templates.yaml
+
+        Parameters
+        ----------
+        template_name (str): a template name
+        template (str): a template content
+
+        Returns
+        -------
+        bool: True if success written, otherwise False.
+        """
         self.status = ''
         if self.is_exist():
-            if not re.match(r'\w+([ ._]\w+)*', namespace):
-                title = 'Invalid Namespace Naming Convention'
-                error = 'namespace must be alphanum+[ ._]?alphanum+?[ ._]?alphanum+?'
-                self.status = 'INVALID-NAMESPACE-FORMAT'
+            if not re.match(r'\w+([ ._]\w+)*', template_name):
+                title = 'Invalid Template Naming Convention'
+                error = 'Template name must be alphanum+[ ._]?alphanum+?[ ._]?alphanum+?'
+                self.status = 'INVALID-TEMPLATE-NAME-FORMAT'
                 create_msgbox(title=title, error=error)
                 return False
 
@@ -302,19 +322,19 @@ class UserTemplate:
                     create_msgbox(title=title, error=error)
                     return False
 
-                if namespace in yaml_obj:
+                if template_name in yaml_obj:
                     title = 'User Template File Not Found'
-                    yesno = "Do you want to overwrite {!r} template".format(namespace)
+                    yesno = "Do you want to overwrite {!r} template".format(template_name)
                     response = create_msgbox(title=title, yesno=yesno)
                     if response == 'yes':
-                        yaml_obj[namespace] = data
+                        yaml_obj[template_name] = template
                         with open(self.filename, 'w') as stream:
                             stream.write(yaml.dump(yaml_obj, sort_keys=True))
                             return True
                     else:
                         return False
                 else:
-                    yaml_obj[namespace] = data
+                    yaml_obj[template_name] = template
                     with open(self.filename, 'w') as stream:
                         stream.write(yaml.dump(yaml_obj, sort_keys=True))
                     return True
@@ -396,7 +416,7 @@ class Application:
         self.author_var = tk.StringVar()
         self.email_var = tk.StringVar()
         self.company_var = tk.StringVar()
-        self.namespace_var = tk.StringVar()
+        self.template_name_var = tk.StringVar()
         self.description_var = tk.StringVar()
         self.search_chkbox_var = tk.BooleanVar()
 
@@ -425,7 +445,7 @@ class Application:
         self.author_var.set('')
         self.email_var.set('')
         self.company_var.set('')
-        self.namespace_var.set('')
+        self.template_name_var.set('')
         self.description_var.set('')
 
     @classmethod
@@ -604,7 +624,7 @@ class Application:
         )
         lframe_args.grid(row=0, column=0, padx=10, pady=10, sticky=tk.W)
 
-        pady = 0 if self.is_macos else 3
+        pady = 0 if self.is_macos else 1
 
         self.Label(
             lframe_args, text='author'
@@ -635,7 +655,7 @@ class Application:
         ).grid(row=3, column=0, columnspan=2, padx=2, pady=pady, sticky=tk.W)
         self.TextBox(
             lframe_args, width=45,
-            textvariable=self.namespace_var
+            textvariable=self.template_name_var
         ).grid(row=3, column=2, columnspan=4, padx=2, pady=pady, sticky=tk.W)
 
         self.Label(
@@ -767,17 +787,17 @@ class Application:
                 if self.snapshot.is_built:  # noqa
                     self.result_btn.config(state=tk.NORMAL)
             else:
-                namespace = self.namespace_var.get().strip()
-                if namespace:
+                template_name = self.template_name_var.get().strip()
+                if template_name:
                     user_template = UserTemplate()
-                    template = user_template.search(namespace)
+                    template = user_template.search(template_name)
                     if template:
                         self.snapshot.update(template=template)
                         self.set_textarea(self.result_textarea, template)
                     else:
                         self.set_textarea(self.result_textarea, user_template.status)
                 else:
-                    title = 'Empty Namespace'
+                    title = 'Empty Template Name'
                     error = 'CANT retrieve template with empty template name.'
                     create_msgbox(title=title, error=error)
 
@@ -803,7 +823,7 @@ class Application:
             self.snapshot.update(is_built=False)
 
             self.test_data_btn_var.set('Test Data')
-            self.namespace_var.set('')
+            self.template_name_var.set('')
             self.search_chkbox_var.set(False)
             # self.root.clipboard_clear()
             self.set_title()
@@ -1004,71 +1024,91 @@ class Application:
 
         btn_width = 5.5 if self.is_macos else 8
         # open button
-        open_file_btn = self.Button(self.entry_frame, text='Open',
-                                    command=self.callback_file_open,
-                                    width=btn_width)
+        open_file_btn = self.Button(
+            self.entry_frame, text='Open',
+            command=self.callback_file_open,
+            width=btn_width
+        )
         open_file_btn.grid(row=0, column=0, padx=(2, 0), pady=(2, 0))
 
         # Save As button
-        self.save_as_btn = self.Button(self.entry_frame, text='Save As',
-                                       command=callback_save_as_btn,
-                                       width=btn_width)
+        self.save_as_btn = self.Button(
+            self.entry_frame, text='Save As',
+            command=callback_save_as_btn,
+            width=btn_width
+        )
         self.save_as_btn.grid(row=0, column=1, pady=(2, 0))
         self.save_as_btn.config(state=tk.DISABLED)
 
         # copy button
-        self.copy_text_btn = self.Button(self.entry_frame, text='Copy',
-                                         command=callback_copy_text_btn,
-                                         width=btn_width)
+        self.copy_text_btn = self.Button(
+            self.entry_frame, text='Copy',
+            command=callback_copy_text_btn,
+            width=btn_width
+        )
         self.copy_text_btn.grid(row=0, column=2, pady=(2, 0))
         self.copy_text_btn.config(state=tk.DISABLED)
 
         # paste button
-        paste_text_btn = ttk.Button(self.entry_frame, text='Paste',
-                                    command=callback_paste_text_btn,
-                                    width=btn_width)
+        paste_text_btn = ttk.Button(
+            self.entry_frame, text='Paste',
+            command=callback_paste_text_btn,
+            width=btn_width
+        )
         paste_text_btn.grid(row=0, column=3, pady=(2, 0))
 
         # clear button
-        clear_text_btn = self.Button(self.entry_frame, text='Clear',
-                                     command=callback_clear_text_btn,
-                                     width=btn_width)
+        clear_text_btn = self.Button(
+            self.entry_frame, text='Clear',
+            command=callback_clear_text_btn,
+            width=btn_width
+        )
         clear_text_btn.grid(row=0, column=4, pady=(2, 0))
 
         # build button
-        build_btn = self.Button(self.entry_frame,
-                                textvariable=self.build_btn_var,
-                                command=callback_build_btn,
-                                width=btn_width)
+        build_btn = self.Button(
+            self.entry_frame,
+            textvariable=self.build_btn_var,
+            command=callback_build_btn,
+            width=btn_width
+        )
         build_btn.grid(row=0, column=5, pady=(2, 0))
 
         # snippet button
-        self.snippet_btn = self.Button(self.entry_frame, text='Snippet',
-                                       command=callback_snippet_btn,
-                                       width=btn_width)
+        self.snippet_btn = self.Button(
+            self.entry_frame, text='Snippet',
+            command=callback_snippet_btn,
+            width=btn_width
+        )
         self.snippet_btn.grid(row=0, column=6, pady=(2, 0))
 
         # unittest button
-        self.unittest_btn = self.Button(self.entry_frame, text='Unittest',
-                                        command=callback_unittest_btn,
-                                        width=btn_width)
+        self.unittest_btn = self.Button(
+            self.entry_frame, text='Unittest',
+            command=callback_unittest_btn,
+            width=btn_width
+        )
         self.unittest_btn.grid(row=0, column=7, pady=(2, 0))
 
         # pytest button
-        self.pytest_btn = self.Button(self.entry_frame, text='Pytest',
-                                      command=callback_pytest_btn,
-                                      width=btn_width)
+        self.pytest_btn = self.Button(
+            self.entry_frame, text='Pytest',
+            command=callback_pytest_btn,
+            width=btn_width
+        )
         self.pytest_btn.grid(row=0, column=8, pady=(2, 0))
 
         # test_data button
-        self.test_data_btn = self.Button(self.entry_frame,
-                                         command=callback_test_data_btn,
-                                         textvariable=self.test_data_btn_var,
-                                         width=btn_width)
+        self.test_data_btn = self.Button(
+            self.entry_frame,
+            command=callback_test_data_btn,
+            textvariable=self.test_data_btn_var,
+            width=btn_width
+        )
         self.test_data_btn.grid(row=0, column=9, pady=(2, 0))
         self.test_data_btn.config(state=tk.DISABLED)
 
-        # test_data button
+        # result button
         self.result_btn = self.Button(
             self.entry_frame, text='Result',
             command=callback_result_btn,
@@ -1077,6 +1117,7 @@ class Application:
         self.result_btn.grid(row=1, column=0, padx=(2, 0), pady=(0, 2))
         self.result_btn.config(state=tk.DISABLED)
 
+        # store button
         self.store_btn = self.Button(
             self.entry_frame, text='Store',
             command=callback_store_btn,
@@ -1085,9 +1126,11 @@ class Application:
         self.store_btn.grid(row=1, column=1, pady=(0, 2))
         self.store_btn.config(state=tk.DISABLED)
 
+        # frame container for checkbox and textbox
         frame = self.Frame(self.entry_frame)
-        frame.grid(row=1, column=2, columnspan=8, sticky=tk.W)
+        frame.grid(row=1, column=2, pady=(0, 2), columnspan=8, sticky=tk.W)
 
+        # search checkbox
         self.search_chkbox = self.CheckBox(
             frame, text='search', variable=self.search_chkbox_var,
             onvalue=True, offvalue=False,
@@ -1095,8 +1138,9 @@ class Application:
         )
         self.search_chkbox.grid(row=0, column=0, padx=4, sticky=tk.W)
 
+        # template name textbox
         self.TextBox(
-            frame, width=50, textvariable=self.namespace_var
+            frame, width=50, textvariable=self.template_name_var
         ).grid(row=0, column=1, sticky=tk.W)
 
         # Robotframework button
