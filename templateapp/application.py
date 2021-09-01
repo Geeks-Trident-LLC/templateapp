@@ -622,7 +622,7 @@ class Application:
         settings = tk.Toplevel(self.root)
         self.set_title(node=settings, title='Settings')
         width = 520 if self.is_macos else 474 if self.is_linux else 370
-        height = 240
+        height = 258 if self.is_macos else 242 if self.is_linux else 234
         x, y = get_relative_center_location(self.root, width, height)
         settings.geometry('{}x{}+{}+{}'.format(width, height, x, y))
         settings.resizable(False, False)
