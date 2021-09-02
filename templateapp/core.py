@@ -13,6 +13,7 @@ from regexapp.core import enclose_string
 
 from templateapp.exceptions import TemplateParsedLineError
 from templateapp.exceptions import TemplateBuilderError
+from templateapp.exceptions import TemplateBuilderInvalidFormat
 from templateapp.config import edition
 
 import logging
@@ -173,6 +174,8 @@ class TemplateBuilder:
     Raises
     ------
     TemplateBuilderError: will raise exception if a created template is invalid.
+    TemplateBuilderInvalidFormat: will raise exception if
+            user_data has invalid format.
     """
     logger = logger
 
@@ -260,6 +263,8 @@ class TemplateBuilder:
         Raises
         ------
         TemplateBuilderError: will raise exception if a created template is invalid.
+        TemplateBuilderInvalidFormat: will raise exception if
+                user_data has invalid format.
         """
         self.template = ''
         self.prepare()
@@ -279,7 +284,8 @@ class TemplateBuilder:
                 error = '{}: {}'.format(type(ex).__name__, ex)
                 raise TemplateBuilderError(error)
         else:
-            raise Exception()
+            msg = 'user_data does not have any assigned variable for template.'
+            raise TemplateBuilderInvalidFormat(msg)
 
     def show_debug_info(self, test_result=None, expected_result=None):
         """show debug information
