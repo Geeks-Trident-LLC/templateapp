@@ -774,7 +774,10 @@ class Application:
 
         self.text_frame.rowconfigure(0, weight=1)
         self.text_frame.columnconfigure(0, weight=1)
-        self.textarea = self.TextArea(self.text_frame, width=20, height=5, wrap='none')
+        self.textarea = self.TextArea(
+            self.text_frame, width=20, height=5, wrap='none',
+            name='main_input_textarea',
+        )
         self.textarea.grid(row=0, column=0, sticky='nswe')
         vscrollbar = ttk.Scrollbar(
             self.text_frame, orient=tk.VERTICAL, command=self.textarea.yview
@@ -1108,6 +1111,7 @@ class Application:
         # open button
         open_file_btn = self.Button(
             self.entry_frame, text='Open',
+            name='main_open_btn',
             command=self.callback_file_open,
             width=btn_width
         )
@@ -1116,6 +1120,7 @@ class Application:
         # Save As button
         self.save_as_btn = self.Button(
             self.entry_frame, text='Save As',
+            name='main_save_as_btn',
             command=callback_save_as_btn,
             width=btn_width
         )
@@ -1125,6 +1130,7 @@ class Application:
         # copy button
         self.copy_text_btn = self.Button(
             self.entry_frame, text='Copy',
+            name='main_copy_btn',
             command=callback_copy_text_btn,
             width=btn_width
         )
@@ -1134,6 +1140,7 @@ class Application:
         # paste button
         paste_text_btn = ttk.Button(
             self.entry_frame, text='Paste',
+            name='main_paste_btn',
             command=callback_paste_text_btn,
             width=btn_width
         )
@@ -1142,6 +1149,7 @@ class Application:
         # clear button
         clear_text_btn = self.Button(
             self.entry_frame, text='Clear',
+            name='main_clear_btn',
             command=callback_clear_text_btn,
             width=btn_width
         )
@@ -1151,6 +1159,7 @@ class Application:
         build_btn = self.Button(
             self.entry_frame,
             textvariable=self.build_btn_var,
+            name='main_build_btn',
             command=callback_build_btn,
             width=btn_width
         )
@@ -1159,6 +1168,7 @@ class Application:
         # snippet button
         self.snippet_btn = self.Button(
             self.entry_frame, text='Snippet',
+            name='main_snippet_btn',
             command=callback_snippet_btn,
             width=btn_width
         )
@@ -1167,6 +1177,7 @@ class Application:
         # unittest button
         self.unittest_btn = self.Button(
             self.entry_frame, text='Unittest',
+            name='main_unittest_btn',
             command=callback_unittest_btn,
             width=btn_width
         )
@@ -1175,6 +1186,7 @@ class Application:
         # pytest button
         self.pytest_btn = self.Button(
             self.entry_frame, text='Pytest',
+            name='main_pytest_btn',
             command=callback_pytest_btn,
             width=btn_width
         )
@@ -1183,6 +1195,7 @@ class Application:
         # test_data button
         self.test_data_btn = self.Button(
             self.entry_frame,
+            name='main_test_data_btn',
             command=callback_test_data_btn,
             textvariable=self.test_data_btn_var,
             width=btn_width
@@ -1193,6 +1206,7 @@ class Application:
         # result button
         self.result_btn = self.Button(
             self.entry_frame, text='Result',
+            name='main_result_btn',
             command=callback_result_btn,
             width=btn_width
         )
@@ -1202,6 +1216,7 @@ class Application:
         # store button
         self.store_btn = self.Button(
             self.entry_frame, text='Store',
+            name='main_store_btn',
             command=callback_store_btn,
             width=btn_width
         )
@@ -1214,7 +1229,9 @@ class Application:
 
         # search checkbox
         self.search_chkbox = self.CheckBox(
-            frame, text='search', variable=self.search_chkbox_var,
+            frame, text='search',
+            name='main_search_checkbox',
+            variable=self.search_chkbox_var,
             onvalue=True, offvalue=False,
             command=callback_search_chkbox
         )
@@ -1222,7 +1239,9 @@ class Application:
 
         # template name textbox
         self.TextBox(
-            frame, width=50, textvariable=self.template_name_var
+            frame, width=50,
+            name='main_template_name_textbox',
+            textvariable=self.template_name_var
         ).grid(row=0, column=1, sticky=tk.W)
 
         # Robotframework button
@@ -1235,7 +1254,8 @@ class Application:
         self.result_frame.rowconfigure(0, weight=1)
         self.result_frame.columnconfigure(0, weight=1)
         self.result_textarea = self.TextArea(
-            self.result_frame, width=20, height=5, wrap='none'
+            self.result_frame, width=20, height=5, wrap='none',
+            name='main_result_textarea'
         )
         self.result_textarea.grid(row=0, column=0, sticky='nswe')
         vscrollbar = ttk.Scrollbar(
