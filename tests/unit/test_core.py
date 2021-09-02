@@ -37,7 +37,7 @@ def tc_info():
         ################################################################################
         Value title (\\S*[a-zA-Z0-9]\\S*( \\S*[a-zA-Z0-9]\\S*)*)
         Value price ((\\d+)?[.]?\\d+)
-        Value genre (\\w+( \\w+)*)
+        Value genre ([a-zA-Z0-9]+( [a-zA-Z0-9]+)*)
 
         Start
           ^Title +Price +Genre
