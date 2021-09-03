@@ -421,7 +421,7 @@ class Application:
         self.root.option_add('*tearOff', False)
 
         # tkinter widgets for main layout
-        self.panedwindow = None
+        self.paned_window = None
         self.text_frame = None
         self.entry_frame = None
         self.backup_frame = None
@@ -569,13 +569,13 @@ class Application:
         self.snapshot.update(switch_app_result_data='')
         self.set_textarea(self.input_textarea, user_data)
         self.set_textarea(self.result_textarea, result_data)
-        self.panedwindow.remove(self.backup_frame)
-        self.panedwindow.insert(1, self.entry_frame)
+        self.paned_window.remove(self.backup_frame)
+        self.paned_window.insert(1, self.entry_frame)
 
     def shift_to_backup_app(self):
         """Switch from main app to backup app"""
-        self.panedwindow.remove(self.entry_frame)
-        self.panedwindow.insert(1, self.backup_frame)
+        self.paned_window.remove(self.entry_frame)
+        self.paned_window.insert(1, self.backup_frame)
 
     def callback_focus(self, event):    # noqa
         """Callback for widget selection"""
@@ -636,20 +636,20 @@ class Application:
         top_frame = self.Frame(about)
         top_frame.pack(fill=tk.BOTH, expand=True)
 
-        panedwindow = self.PanedWindow(top_frame, orient=tk.VERTICAL)
-        panedwindow.pack(fill=tk.BOTH, expand=True, padx=8, pady=12)
+        paned_window = self.PanedWindow(top_frame, orient=tk.VERTICAL)
+        paned_window.pack(fill=tk.BOTH, expand=True, padx=8, pady=12)
 
         # company
-        frame = self.Frame(panedwindow, width=420, height=20)
-        panedwindow.add(frame, weight=1)
+        frame = self.Frame(paned_window, width=420, height=20)
+        paned_window.add(frame, weight=1)
 
         fmt = 'Templateapp v{} ({} Edition)'
         company_lbl = self.Label(frame, text=fmt.format(version, edition))
         company_lbl.pack(side=tk.LEFT)
 
         # URL
-        frame = self.Frame(panedwindow, width=420, height=20)
-        panedwindow.add(frame, weight=1)
+        frame = self.Frame(paned_window, width=420, height=20)
+        paned_window.add(frame, weight=1)
 
         url = Data.repo_url
         self.Label(frame, text='URL:').pack(side=tk.LEFT)
@@ -668,10 +668,10 @@ class Application:
 
         # license textbox
         lframe = self.LabelFrame(
-            panedwindow, height=300, width=420,
+            paned_window, height=300, width=420,
             text=Data.license_name
         )
-        panedwindow.add(lframe, weight=7)
+        paned_window.add(lframe, weight=7)
 
         width = 55 if self.is_macos else 48
         height = 19 if self.is_macos else 15 if self.is_linux else 16
@@ -684,8 +684,8 @@ class Application:
         txtbox.config(state=tk.DISABLED)
 
         # footer - copyright
-        frame = self.Frame(panedwindow, width=380, height=20)
-        panedwindow.add(frame, weight=1)
+        frame = self.Frame(paned_window, width=380, height=20)
+        paned_window.add(frame, weight=1)
 
         footer = self.Label(frame, text=Data.copyright_text)
         footer.pack(side=tk.LEFT)
@@ -829,24 +829,24 @@ class Application:
 
     def build_frame(self):
         """Build layout for regex GUI."""
-        self.panedwindow = self.PanedWindow(self.root, orient=tk.VERTICAL)
-        self.panedwindow.pack(fill=tk.BOTH, expand=True, padx=2, pady=2)
+        self.paned_window = self.PanedWindow(self.root, orient=tk.VERTICAL)
+        self.paned_window.pack(fill=tk.BOTH, expand=True, padx=2, pady=2)
 
         self.text_frame = self.Frame(
-            self.panedwindow, width=600, height=300, relief=tk.RIDGE
+            self.paned_window, width=600, height=300, relief=tk.RIDGE
         )
         self.entry_frame = self.Frame(
-            self.panedwindow, width=600, height=10, relief=tk.RIDGE
+            self.paned_window, width=600, height=10, relief=tk.RIDGE
         )
         self.backup_frame = self.Frame(
-            self.panedwindow, width=600, height=10, relief=tk.RIDGE
+            self.paned_window, width=600, height=10, relief=tk.RIDGE
         )
         self.result_frame = self.Frame(
-            self.panedwindow, width=600, height=350, relief=tk.RIDGE
+            self.paned_window, width=600, height=350, relief=tk.RIDGE
         )
-        self.panedwindow.add(self.text_frame, weight=2)
-        self.panedwindow.add(self.entry_frame)
-        self.panedwindow.add(self.result_frame, weight=7)
+        self.paned_window.add(self.text_frame, weight=2)
+        self.paned_window.add(self.entry_frame)
+        self.paned_window.add(self.result_frame, weight=7)
 
     def build_textarea(self):
         """Build input text for regex GUI."""
