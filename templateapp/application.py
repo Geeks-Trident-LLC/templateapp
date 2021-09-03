@@ -440,6 +440,10 @@ class Application:
         self.store_btn = None
         self.search_chkbox = None
 
+        self.curr_widget = None
+        self.prev_widget = None
+        self.root.bind_all("<Button-1>", lambda e: self.callback_focus(e))
+
         # datastore
         self.snapshot = Snapshot()
         self.snapshot.update(user_data='')
@@ -550,6 +554,7 @@ class Application:
         node.title(title)
 
     def shift_to_main_app(self):
+        """Switch from backup app to main app"""
         user_data = self.snapshot.switch_app_user_data
         result_data = self.snapshot.switch_app_result_data
         self.snapshot.update(switch_app_user_data='')
@@ -560,8 +565,14 @@ class Application:
         self.panedwindow.insert(1, self.entry_frame)
 
     def shift_to_backup_app(self):
+        """Switch from main app to backup app"""
         self.panedwindow.remove(self.entry_frame)
         self.panedwindow.insert(1, self.backup_frame)
+
+    def callback_focus(self, event):
+        """Callback for widget selection"""
+        self.prev_widget = self.curr_widget
+        self.curr_widget = self.root.focus_get()
 
     def callback_file_exit(self):
         """Callback for Menu File > Exit."""
