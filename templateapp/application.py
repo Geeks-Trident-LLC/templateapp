@@ -1368,34 +1368,51 @@ class Application:
         frame = self.Frame(self.backup_frame)
         frame.grid(row=0, column=1, padx=(1, 2), pady=(4, 0), sticky=tk.W)
 
+        # customize width for author textbox
+        width = 18 if self.is_macos else 20 if self.is_linux else 28
         self.TextBox(
-            frame, width=30,
+            frame, width=width,
             textvariable=self.author_var
         ).grid(row=0, column=0, sticky=tk.W)
 
+        # customize x-padding for email label
+        x = 6 if self.is_macos else 7 if self.is_linux else 4
         self.Label(
             frame, text='Email'
-        ).grid(row=0, column=1, padx=(4, 2), sticky=tk.W)
+        ).grid(row=0, column=1, padx=(x, 2), sticky=tk.W)
+
+        # customize width for email textbox
+        width = 27 if self.is_macos else 32 if self.is_linux else 43
         self.TextBox(
-            frame, width=35,
+            frame, width=width,
             textvariable=self.email_var
         ).grid(row=0, column=2, sticky=tk.W)
 
+        # customize x-padding for company label
+        x = 5 if self.is_macos else 6 if self.is_linux else 5
         self.Label(
             frame, text='Company'
-        ).grid(row=0, column=3, padx=(5, 2), sticky=tk.W)
+        ).grid(row=0, column=3, padx=(x, 2), sticky=tk.W)
+
+        # customize width for company textbox
+        width = 18 if self.is_macos else 20 if self.is_linux else 28
         self.TextBox(
-            frame, width=30,
+            frame, width=width,
             textvariable=self.company_var
         ).grid(row=0, column=4, sticky=tk.W)
 
+        # custom pady for description
+        pady = 0 if self.is_macos else 1
         self.Label(
             self.backup_frame, text='Description'
-        ).grid(row=1, column=0, padx=(4, 1), pady=(1, 0), sticky=tk.W)
+        ).grid(row=1, column=0, padx=(4, 1), pady=pady, sticky=tk.W)
+
+        # custom width for description textbox
+        width = 78 if self.is_macos else 88 if self.is_linux else 118
         self.TextBox(
-            self.backup_frame, width=114,
+            self.backup_frame, width=width,
             textvariable=self.description_var
-        ).grid(row=1, column=1, padx=(1, 2), pady=(1, 1), sticky=tk.W)
+        ).grid(row=1, column=1, padx=(1, 2), pady=pady, sticky=tk.W)
 
         self.Label(
             self.backup_frame, text='Name'
@@ -1406,8 +1423,10 @@ class Application:
         )
         frame.grid(row=2, column=1, padx=(1, 2), pady=(0, 2), sticky=tk.W)
 
+        # customize width for template name textbox
+        width = 70 if self.is_window else 50
         self.TextBox(
-            frame, width=60,
+            frame, width=width,
             textvariable=self.template_name_var
         ).pack(side=tk.LEFT)
         self.Button(
