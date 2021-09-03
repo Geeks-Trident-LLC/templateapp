@@ -1431,7 +1431,7 @@ class Application:
         frame.grid(row=2, column=1, padx=(1, 2), pady=(0, 2), sticky=tk.W)
 
         # customize width for template name textbox
-        width = 70 if self.is_window else 50
+        width = 48 if self.is_macos else 50 if self.is_linux else 70
         self.TextBox(
             frame, width=width,
             textvariable=self.template_name_var
