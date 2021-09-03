@@ -427,7 +427,7 @@ class Application:
         self.backup_frame = None
         self.result_frame = None
 
-        self.textarea = None
+        self.input_textarea = None
         self.result_textarea = None
 
         self.save_as_btn = None
@@ -567,7 +567,7 @@ class Application:
         result_data = self.snapshot.switch_app_result_data  # noqa
         self.snapshot.update(switch_app_user_data='')
         self.snapshot.update(switch_app_result_data='')
-        self.set_textarea(self.textarea, user_data)
+        self.set_textarea(self.input_textarea, user_data)
         self.set_textarea(self.result_textarea, result_data)
         self.panedwindow.remove(self.backup_frame)
         self.panedwindow.insert(1, self.entry_frame)
@@ -602,7 +602,7 @@ class Application:
                 self.test_data_btn_var.set('Test Data')
                 self.set_textarea(self.result_textarea, '')
                 self.snapshot.update(test_data=content)
-                self.set_textarea(self.textarea, content, title=filename)
+                self.set_textarea(self.input_textarea, content, title=filename)
 
     def callback_help_documentation(self):
         """Callback for Menu Help > Getting Started."""
@@ -853,20 +853,20 @@ class Application:
 
         self.text_frame.rowconfigure(0, weight=1)
         self.text_frame.columnconfigure(0, weight=1)
-        self.textarea = self.TextArea(
+        self.input_textarea = self.TextArea(
             self.text_frame, width=20, height=5, wrap='none',
             name='main_input_textarea',
         )
-        self.textarea.grid(row=0, column=0, sticky='nswe')
+        self.input_textarea.grid(row=0, column=0, sticky='nswe')
         vscrollbar = ttk.Scrollbar(
-            self.text_frame, orient=tk.VERTICAL, command=self.textarea.yview
+            self.text_frame, orient=tk.VERTICAL, command=self.input_textarea.yview
         )
         vscrollbar.grid(row=0, column=1, sticky='ns')
         hscrollbar = ttk.Scrollbar(
-            self.text_frame, orient=tk.HORIZONTAL, command=self.textarea.xview
+            self.text_frame, orient=tk.HORIZONTAL, command=self.input_textarea.xview
         )
         hscrollbar.grid(row=1, column=0, sticky='ew')
-        self.textarea.config(
+        self.input_textarea.config(
             yscrollcommand=vscrollbar.set, xscrollcommand=hscrollbar.set
         )
 
@@ -875,7 +875,7 @@ class Application:
 
         def callback_build_btn():
             if self.build_btn_var.get() == 'Build':
-                user_data = Application.get_textarea(self.textarea)
+                user_data = Application.get_textarea(self.input_textarea)
                 if not user_data:
                     create_msgbox(
                         title='Empty Data',
@@ -939,7 +939,7 @@ class Application:
                 w = 'Result window is READONLY text area.  CAN NOT clear.'
                 create_msgbox(title=title, warning=w)
             else:
-                self.textarea.delete("1.0", "end")
+                self.input_textarea.delete("1.0", "end")
                 self.result_textarea.delete("1.0", "end")
                 self.save_as_btn.config(state=tk.DISABLED)
                 self.copy_text_btn.config(state=tk.DISABLED)
@@ -979,7 +979,7 @@ class Application:
                 self.snapshot.update(result='')
 
                 title = '<<PASTE - Clipboard>>'
-                self.set_textarea(self.textarea, data, title=title)
+                self.set_textarea(self.input_textarea, data, title=title)
             except Exception as ex:  # noqa
                 create_msgbox(
                     title='Empty Clipboard',
@@ -996,7 +996,7 @@ class Application:
                 )
                 return
 
-            user_data = Application.get_textarea(self.textarea)
+            user_data = Application.get_textarea(self.input_textarea)
             if not user_data:
                 create_msgbox(
                     title='Empty Data',
@@ -1031,7 +1031,7 @@ class Application:
                 )
                 return
 
-            user_data = Application.get_textarea(self.textarea)
+            user_data = Application.get_textarea(self.input_textarea)
             if not user_data:
                 create_msgbox(
                     title='Empty Data',
@@ -1066,7 +1066,7 @@ class Application:
                 )
                 return
 
-            user_data = Application.get_textarea(self.textarea)
+            user_data = Application.get_textarea(self.input_textarea)
             if not user_data:
                 create_msgbox(
                     title='Empty Data',
@@ -1123,7 +1123,7 @@ class Application:
                 )
                 return
 
-            user_data = Application.get_textarea(self.textarea)
+            user_data = Application.get_textarea(self.input_textarea)
             if not user_data:
                 create_msgbox(
                     title='Empty Data',
@@ -1181,12 +1181,12 @@ class Application:
                     user_template.create(confirmed=False)
 
             if user_template.is_exist():
-                user_data = self.get_textarea(self.textarea)
+                user_data = self.get_textarea(self.input_textarea)
                 result_data = self.get_textarea(self.result_textarea)
                 self.snapshot.update(switch_app_user_data=user_data)
                 self.snapshot.update(switch_app_result_data=result_data)
 
-                self.set_textarea(self.textarea, result_data)
+                self.set_textarea(self.input_textarea, result_data)
                 self.set_textarea(self.result_textarea, user_template.read())
                 self.shift_to_backup_app()
 
@@ -1213,7 +1213,7 @@ class Application:
             try:
                 kwargs = self.get_template_args()
                 factory = TemplateBuilder(user_data=user_data, **kwargs)
-                self.set_textarea(self.textarea, factory.template)
+                self.set_textarea(self.input_textarea, factory.template)
             except Exception as ex:
                 error = '{}: {}'.format(type(ex).__name__, ex)
                 create_msgbox(title='RegexBuilder Error', error=error)
@@ -1235,7 +1235,7 @@ class Application:
                 create_msgbox(title=title, info=info)
                 return
 
-            user_data = self.get_textarea(self.textarea)
+            user_data = self.get_textarea(self.input_textarea)
             user_template.write(tmpl_name, user_data.strip())
 
             self.set_textarea(self.result_textarea, user_template.content)
