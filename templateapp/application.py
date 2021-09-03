@@ -227,9 +227,18 @@ class UserTemplate:
 
             if response == 'yes':
                 node = Path(self.filename)
-                node.parent.touch()
+                parent = node.parent
+                if not parent.exists():
+                    parent.mkdir(parents=True, exist_ok=True)
+                else:
+                    if parent.is_file():
+                        title = 'Directory Violation'
+                        fmt = 'CANT create {!r} file because its parent, {!r}, is a file.'
+                        error = fmt.format(str(node), str(parent))
+                        create_msgbox(title=title, error=error)
+                        return False
                 node.touch()
-                self.content = ''
+                self.content = node.read_text()
                 if confirmed:
                     title = 'Created User Template File'
                     info = '{!r}? is created.'.format(self.filename)
