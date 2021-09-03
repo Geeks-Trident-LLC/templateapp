@@ -8,6 +8,7 @@ from tkinter import messagebox
 from os import path
 import webbrowser
 from textwrap import dedent
+from textwrap import indent
 import re
 import platform
 from pathlib import Path
@@ -182,6 +183,7 @@ class UserTemplate:
     ----------
     filename (str): user template file name i.e /home_dir/.templateapp/user_templates.yaml
     status (str): a status message.
+    content (str): user template file content.
 
     Methods
     -------
@@ -194,6 +196,7 @@ class UserTemplate:
     def __init__(self):
         self.filename = str(PurePath(Path.home(), '.templateapp', 'user_templates.yaml'))
         self.status = ''
+        self.content = ''
 
     def is_exist(self):
         """return True if /home_dir/.templateapp/user_templates.yaml exists"""
@@ -218,14 +221,24 @@ class UserTemplate:
             if confirmed:
                 title = 'Creating User Template File'
                 yesno = 'Do you want to create {!r} file?'.format(self.filename)
-                is_proceeded = create_msgbox(title=title, yesno=yesno)
+                response = create_msgbox(title=title, yesno=yesno)
             else:
-                is_proceeded = 'yes'
+                response = 'yes'
 
-            if is_proceeded == 'yes':
+            if response == 'yes':
                 node = Path(self.filename)
-                node.parent.touch()
+                parent = node.parent
+                if not parent.exists():
+                    parent.mkdir(parents=True, exist_ok=True)
+                else:
+                    if parent.is_file():
+                        title = 'Directory Violation'
+                        fmt = 'CANT create {!r} file because its parent, {!r}, is a file.'
+                        error = fmt.format(str(node), str(parent))
+                        create_msgbox(title=title, error=error)
+                        return False
                 node.touch()
+                self.content = node.read_text()
                 if confirmed:
                     title = 'Created User Template File'
                     info = '{!r}? is created.'.format(self.filename)
@@ -243,8 +256,8 @@ class UserTemplate:
         """return content of /home_dir/.templateapp/user_templates.yaml"""
         if self.is_exist():
             with open(self.filename) as stream:
-                content = stream.read()
-                return content
+                self.content = stream.read()
+            return self.content
         else:
             title = 'User Template File Not Found'
             error = "{!r} IS NOT existed.".format(self.filename)
@@ -265,24 +278,31 @@ class UserTemplate:
         """
         self.status = ''
         if self.is_exist():
-            with open(self.filename) as stream:
-                yaml_obj = yaml.load(stream, Loader=yaml.SafeLoader)
+            if not re.match(r'[a-z0-9]+([+._-][a-z0-9]+)*$', template_name):
+                title = 'Invalid Template Naming Convention'
+                error = 'Template name must be alphanum+[+._-]?alphanum+?[+._-]?alphanum+?'
+                self.status = 'INVALID-TEMPLATE-NAME-FORMAT'
+                create_msgbox(title=title, error=error)
+                return ''
 
-                if yaml_obj is None:
-                    yaml_obj = dict()
+            yaml_obj = yaml.load(self.content, Loader=yaml.SafeLoader)
 
-                if isinstance(yaml_obj, dict):
-                    if template_name in yaml_obj:
-                        return yaml_obj.get(template_name)
-                    else:
-                        self.status = 'NOT_FOUND'
-                        return ''
+            if yaml_obj is None:
+                yaml_obj = dict()
+
+            if isinstance(yaml_obj, dict):
+                if template_name in yaml_obj:
+                    self.status = 'FOUND'
+                    return yaml_obj.get(template_name)
                 else:
-                    title = 'Invalid User Template Format'
-                    error = "{!r} IS NOT correct format.".format(self.filename)
-                    self.status = error
-                    create_msgbox(title=title, error=error)
+                    self.status = 'NOT_FOUND'
                     return ''
+            else:
+                title = 'Invalid User Template Format'
+                error = "{!r} IS NOT correct format.".format(self.filename)
+                self.status = 'INVALID-TEMPLATE-FORMAT'
+                create_msgbox(title=title, error=error)
+                return ''
         else:
             title = 'User Template File Not Found'
             error = "{!r} IS NOT existed.".format(self.filename)
@@ -304,55 +324,73 @@ class UserTemplate:
         """
         self.status = ''
         if self.is_exist():
-            if not re.match(r'\w+([ ._]\w+)*', template_name):
-                title = 'Invalid Template Naming Convention'
-                error = 'Template name must be alphanum+[ ._]?alphanum+?[ ._]?alphanum+?'
-                self.status = 'INVALID-TEMPLATE-NAME-FORMAT'
-                create_msgbox(title=title, error=error)
-                return False
+            self.search(template_name)
+            if self.status == 'FOUND' or self.status == 'NOT_FOUND':
+                content = self.read()
+                yaml_obj = yaml.load(content, Loader=yaml.SafeLoader)
+                yaml_obj = yaml_obj or dict()
+                if template_name in yaml_obj:
+                    title = 'Duplicate Template Name'
+                    fmt = ('{!r} template name is already existed.\n'
+                           'Do you want to overwrite?')
+                    question = fmt.format(template_name)
+                    response = create_msgbox(title=title, question=question)
+                    if response == 'yes':
+                        yaml_obj[template_name] = template
+                        for name, tmpl in yaml_obj.items():
+                            if tmpl.strip() == template.strip() and name != template_name:
+                                title = 'Duplicate Template Name And Content'
+                                fmt = ('{!r} template name is a duplicate name and '
+                                       'duplicate content with other {!r}.\n  '
+                                       'CANT NOT overwrite')
+                                error = fmt.format(template_name, name)
+                                create_msgbox(title=title, error=error)
+                                self.status = 'DUPLICATE-NAME-AND-CONTENT-VIOLATION'
+                                return False
+                    else:
+                        self.status = 'DENIED-OVERWRITE'
+                        return False
+                else:
+                    removed_lst = []
+                    for name, tmpl in yaml_obj.items():
+                        if tmpl.strip() == template.strip():
+                            title = 'Duplicate Template Content'
+                            fmt = ('{!r} template name (i.e. your template) has a '
+                                   'same content with {!r}.\n  Do you want to rename?')
+                            question = fmt.format(template_name, name)
+                            response = create_msgbox(title=title, question=question)
+                            if response == 'yes':
+                                removed_lst.append(name)
+                            else:
+                                self.status = 'DENIED-RENAME'
+                                return False
 
-            try:
-                with open(self.filename) as stream:
-                    yaml_obj = yaml.load(stream, Loader=yaml.SafeLoader)
+                    for name in removed_lst:
+                        yaml_obj.pop(name)
 
-                if yaml_obj is None:
-                    yaml_obj = dict()
+                    yaml_obj[template_name] = template
 
-                if not isinstance(yaml_obj, dict):
-                    title = 'Invalid User Template Format'
-                    error = "CANT SAVE to the incorrect format {}.".format(self.filename)
+                lst = []
+
+                for name in sorted(yaml_obj.keys()):
+                    tmpl = yaml_obj.get(name)
+                    data = '{}: |-\n{}'.format(name, indent(tmpl, '  '))
+                    lst.append(data)
+
+                try:
+                    with open(self.filename, 'w') as stream:
+                        content = '\n\n'.join(lst)
+                        stream.write(content)
+                        self.content = content
+                        return True
+                except Exception as ex:
+                    title = 'Writing User Template File Error'
+                    error = "{}: {}.".format(type(ex).__name__, ex)
                     self.status = error
                     create_msgbox(title=title, error=error)
                     return False
-
-                if template_name in yaml_obj:
-                    title = 'User Template File Not Found'
-                    yesno = "Do you want to overwrite {!r} template".format(template_name)
-                    response = create_msgbox(title=title, yesno=yesno)
-                    if response == 'yes':
-                        yaml_obj[template_name] = template
-                        with open(self.filename, 'w') as stream:
-                            stream.write(yaml.dump(yaml_obj, sort_keys=True))
-                            return True
-                    else:
-                        return False
-                else:
-                    yaml_obj[template_name] = template
-                    with open(self.filename, 'w') as stream:
-                        stream.write(yaml.dump(yaml_obj, sort_keys=True))
-                    return True
-            except Exception as ex:
-                title = 'Writing User Template File Error'
-                error = "{}: {}.".format(type(ex).__name__, ex)
-                self.status = error
-                create_msgbox(title=title, error=error)
+            else:
                 return False
-        else:
-            title = 'User Template File Not Found'
-            error = "{!r} IS NOT existed.".format(self.filename)
-            self.status = error
-            create_msgbox(title=title, error=error)
-            return False
 
 
 class Application:
@@ -386,6 +424,7 @@ class Application:
         self.panedwindow = None
         self.text_frame = None
         self.entry_frame = None
+        self.backup_frame = None
         self.result_frame = None
 
         self.textarea = None
@@ -408,6 +447,8 @@ class Application:
         self.snapshot.update(result='')
         self.snapshot.update(template='')
         self.snapshot.update(is_built=False)
+        self.snapshot.update(switch_app_user_data='')
+        self.snapshot.update(switch_app_result_data='')
 
         # variables
         self.build_btn_var = tk.StringVar()
@@ -507,6 +548,20 @@ class Application:
         btitle = self._base_title
         title = '{} - {}'.format(title, btitle) if title else btitle
         node.title(title)
+
+    def shift_to_main_app(self):
+        user_data = self.snapshot.switch_app_user_data
+        result_data = self.snapshot.switch_app_result_data
+        self.snapshot.update(switch_app_user_data='')
+        self.snapshot.update(switch_app_result_data='')
+        self.set_textarea(self.textarea, user_data)
+        self.set_textarea(self.result_textarea, result_data)
+        self.panedwindow.remove(self.backup_frame)
+        self.panedwindow.insert(1, self.entry_frame)
+
+    def shift_to_backup_app(self):
+        self.panedwindow.remove(self.entry_frame)
+        self.panedwindow.insert(1, self.backup_frame)
 
     def callback_file_exit(self):
         """Callback for Menu File > Exit."""
@@ -622,7 +677,7 @@ class Application:
         settings = tk.Toplevel(self.root)
         self.set_title(node=settings, title='Settings')
         width = 520 if self.is_macos else 474 if self.is_linux else 370
-        height = 240
+        height = 258 if self.is_macos else 242 if self.is_linux else 234
         x, y = get_relative_center_location(self.root, width, height)
         settings.geometry('{}x{}+{}+{}'.format(width, height, x, y))
         settings.resizable(False, False)
@@ -760,7 +815,10 @@ class Application:
             self.panedwindow, width=600, height=300, relief=tk.RIDGE
         )
         self.entry_frame = self.Frame(
-            self.panedwindow, width=600, height=50, relief=tk.RIDGE
+            self.panedwindow, width=600, height=10, relief=tk.RIDGE
+        )
+        self.backup_frame = self.Frame(
+            self.panedwindow, width=600, height=10, relief=tk.RIDGE
         )
         self.result_frame = self.Frame(
             self.panedwindow, width=600, height=350, relief=tk.RIDGE
@@ -774,7 +832,10 @@ class Application:
 
         self.text_frame.rowconfigure(0, weight=1)
         self.text_frame.columnconfigure(0, weight=1)
-        self.textarea = self.TextArea(self.text_frame, width=20, height=5, wrap='none')
+        self.textarea = self.TextArea(
+            self.text_frame, width=20, height=5, wrap='none',
+            name='main_input_textarea',
+        )
         self.textarea.grid(row=0, column=0, sticky='nswe')
         vscrollbar = ttk.Scrollbar(
             self.text_frame, orient=tk.VERTICAL, command=self.textarea.yview
@@ -808,6 +869,9 @@ class Application:
                     self.snapshot.update(result=factory.template)
                     self.snapshot.update(template=factory.template)
                     self.snapshot.update(is_built=True)
+                    self.test_data_btn_var.set('Test Data')
+                    self.save_as_btn.config(state=tk.NORMAL)
+                    self.copy_text_btn.config(state=tk.NORMAL)
                     self.set_textarea(self.result_textarea, factory.template)
                 except Exception as ex:
                     error = '{}: {}'.format(type(ex).__name__, ex)
@@ -823,6 +887,9 @@ class Application:
                 if template_name:
                     user_template = UserTemplate()
                     template = user_template.search(template_name)
+                    self.save_as_btn.config(state=tk.NORMAL)
+                    self.copy_text_btn.config(state=tk.NORMAL)
+                    self.test_data_btn_var.set('Test Data')
                     if template:
                         self.snapshot.update(template=template)
                         self.snapshot.update(result=template)
@@ -1064,6 +1131,7 @@ class Application:
                     pretty_data = pformat(rows)
                     result += fmt.format(pretty_data) if result else pretty_data
 
+                self.test_data_btn_var.set('Test Data')
                 self.snapshot.update(result=result)
                 self.set_textarea(self.result_textarea, result)
             except Exception as ex:
@@ -1071,7 +1139,27 @@ class Application:
                 create_msgbox(title='RegexBuilder Error', error=error)
 
         def callback_store_btn():
-            raise Exception('TODO: Need to implement callback_store_btn')
+            user_template = UserTemplate()
+            if not user_template.is_exist():
+                title = 'User Template File Not Found'
+                fmt = ('The feature is only available when {!r} is existed.\n'
+                       'Do you want to create this file?')
+                question = fmt.format(user_template.filename)
+                response = create_msgbox(title=title, question=question)
+                if response == 'no':
+                    return
+                else:
+                    user_template.create(confirmed=False)
+
+            if user_template.is_exist():
+                user_data = self.get_textarea(self.textarea)
+                result_data = self.get_textarea(self.result_textarea)
+                self.snapshot.update(switch_app_user_data=user_data)
+                self.snapshot.update(switch_app_result_data=result_data)
+
+                self.set_textarea(self.textarea, result_data)
+                self.set_textarea(self.result_textarea, user_template.read())
+                self.shift_to_backup_app()
 
         def callback_search_chkbox():
             user_template = UserTemplate()
@@ -1091,6 +1179,39 @@ class Application:
                 if self.snapshot.is_built:  # noqa
                     self.store_btn.config(state=tk.NORMAL)
 
+        def callback_app_backup_refresh_btn():
+            user_data = self.snapshot.switch_app_user_data
+            try:
+                kwargs = self.get_template_args()
+                factory = TemplateBuilder(user_data=user_data, **kwargs)
+                self.set_textarea(self.textarea, factory.template)
+            except Exception as ex:
+                error = '{}: {}'.format(type(ex).__name__, ex)
+                create_msgbox(title='RegexBuilder Error', error=error)
+
+        def callback_app_backup_save_btn():
+            user_template = UserTemplate()
+            tmpl_name = self.template_name_var.get()
+            template = user_template.search(tmpl_name)
+            status = user_template.status
+            is_invalid_format = status == 'INVALID-TEMPLATE-FORMAT'
+            is_invalid_name = status == 'INVALID-TEMPLATE-NAME-FORMAT'
+
+            if is_invalid_name or is_invalid_format:
+                return
+            elif status == 'FOUND':
+                title = 'Duplicate Template Name'
+                fmt = ('{!r} template name is already existed.  '
+                       'Please use different name.')
+                info = fmt.format(tmpl_name)
+                create_msgbox(title=title, info=info)
+                return
+
+            user_data = self.get_textarea(self.textarea)
+            user_template.write(tmpl_name, user_data.strip())
+
+            self.set_textarea(self.result_textarea, user_template.content)
+
         # def callback_rf_btn():
         #     create_msgbox(
         #         title='Robotframework feature',
@@ -1101,6 +1222,7 @@ class Application:
         # open button
         open_file_btn = self.Button(
             self.entry_frame, text='Open',
+            name='main_open_btn',
             command=self.callback_file_open,
             width=btn_width
         )
@@ -1109,6 +1231,7 @@ class Application:
         # Save As button
         self.save_as_btn = self.Button(
             self.entry_frame, text='Save As',
+            name='main_save_as_btn',
             command=callback_save_as_btn,
             width=btn_width
         )
@@ -1118,6 +1241,7 @@ class Application:
         # copy button
         self.copy_text_btn = self.Button(
             self.entry_frame, text='Copy',
+            name='main_copy_btn',
             command=callback_copy_text_btn,
             width=btn_width
         )
@@ -1127,6 +1251,7 @@ class Application:
         # paste button
         paste_text_btn = ttk.Button(
             self.entry_frame, text='Paste',
+            name='main_paste_btn',
             command=callback_paste_text_btn,
             width=btn_width
         )
@@ -1135,6 +1260,7 @@ class Application:
         # clear button
         clear_text_btn = self.Button(
             self.entry_frame, text='Clear',
+            name='main_clear_btn',
             command=callback_clear_text_btn,
             width=btn_width
         )
@@ -1144,6 +1270,7 @@ class Application:
         build_btn = self.Button(
             self.entry_frame,
             textvariable=self.build_btn_var,
+            name='main_build_btn',
             command=callback_build_btn,
             width=btn_width
         )
@@ -1152,6 +1279,7 @@ class Application:
         # snippet button
         self.snippet_btn = self.Button(
             self.entry_frame, text='Snippet',
+            name='main_snippet_btn',
             command=callback_snippet_btn,
             width=btn_width
         )
@@ -1160,6 +1288,7 @@ class Application:
         # unittest button
         self.unittest_btn = self.Button(
             self.entry_frame, text='Unittest',
+            name='main_unittest_btn',
             command=callback_unittest_btn,
             width=btn_width
         )
@@ -1168,6 +1297,7 @@ class Application:
         # pytest button
         self.pytest_btn = self.Button(
             self.entry_frame, text='Pytest',
+            name='main_pytest_btn',
             command=callback_pytest_btn,
             width=btn_width
         )
@@ -1176,6 +1306,7 @@ class Application:
         # test_data button
         self.test_data_btn = self.Button(
             self.entry_frame,
+            name='main_test_data_btn',
             command=callback_test_data_btn,
             textvariable=self.test_data_btn_var,
             width=btn_width
@@ -1186,6 +1317,7 @@ class Application:
         # result button
         self.result_btn = self.Button(
             self.entry_frame, text='Result',
+            name='main_result_btn',
             command=callback_result_btn,
             width=btn_width
         )
@@ -1195,6 +1327,7 @@ class Application:
         # store button
         self.store_btn = self.Button(
             self.entry_frame, text='Store',
+            name='main_store_btn',
             command=callback_store_btn,
             width=btn_width
         )
@@ -1207,7 +1340,9 @@ class Application:
 
         # search checkbox
         self.search_chkbox = self.CheckBox(
-            frame, text='search', variable=self.search_chkbox_var,
+            frame, text='search',
+            name='main_search_checkbox',
+            variable=self.search_chkbox_var,
             onvalue=True, offvalue=False,
             command=callback_search_chkbox
         )
@@ -1215,7 +1350,9 @@ class Application:
 
         # template name textbox
         self.TextBox(
-            frame, width=50, textvariable=self.template_name_var
+            frame, width=50,
+            name='main_template_name_textbox',
+            textvariable=self.template_name_var
         ).grid(row=0, column=1, sticky=tk.W)
 
         # Robotframework button
@@ -1223,12 +1360,98 @@ class Application:
         #                     command=callback_rf_btn, width=4)
         # rf_btn.grid(row=0, column=10)
 
+        # backup app
+        self.Label(
+            self.backup_frame, text='Author'
+        ).grid(row=0, column=0, padx=(4, 1), pady=(4, 0), sticky=tk.W)
+
+        frame = self.Frame(self.backup_frame)
+        frame.grid(row=0, column=1, padx=(1, 2), pady=(4, 0), sticky=tk.W)
+
+        # customize width for author textbox
+        width = 18 if self.is_macos else 20 if self.is_linux else 28
+        self.TextBox(
+            frame, width=width,
+            textvariable=self.author_var
+        ).grid(row=0, column=0, sticky=tk.W)
+
+        # customize x-padding for email label
+        x = 6 if self.is_macos else 7 if self.is_linux else 4
+        self.Label(
+            frame, text='Email'
+        ).grid(row=0, column=1, padx=(x, 2), sticky=tk.W)
+
+        # customize width for email textbox
+        width = 27 if self.is_macos else 32 if self.is_linux else 43
+        self.TextBox(
+            frame, width=width,
+            textvariable=self.email_var
+        ).grid(row=0, column=2, sticky=tk.W)
+
+        # customize x-padding for company label
+        x = 5 if self.is_macos else 6 if self.is_linux else 5
+        self.Label(
+            frame, text='Company'
+        ).grid(row=0, column=3, padx=(x, 2), sticky=tk.W)
+
+        # customize width for company textbox
+        width = 18 if self.is_macos else 20 if self.is_linux else 28
+        self.TextBox(
+            frame, width=width,
+            textvariable=self.company_var
+        ).grid(row=0, column=4, sticky=tk.W)
+
+        # custom pady for description
+        pady = 0 if self.is_macos else 1
+        self.Label(
+            self.backup_frame, text='Description'
+        ).grid(row=1, column=0, padx=(4, 1), pady=pady, sticky=tk.W)
+
+        # custom width for description textbox
+        width = 78 if self.is_macos else 88 if self.is_linux else 118
+        self.TextBox(
+            self.backup_frame, width=width,
+            textvariable=self.description_var
+        ).grid(row=1, column=1, padx=(1, 2), pady=pady, sticky=tk.W)
+
+        self.Label(
+            self.backup_frame, text='Name'
+        ).grid(row=2, column=0, padx=(4, 1), pady=(0, 2), sticky=tk.W)
+
+        frame = self.Frame(
+            self.backup_frame
+        )
+        frame.grid(row=2, column=1, padx=(1, 2), pady=(0, 2), sticky=tk.W)
+
+        # customize width for template name textbox
+        width = 70 if self.is_window else 50
+        self.TextBox(
+            frame, width=width,
+            textvariable=self.template_name_var
+        ).pack(side=tk.LEFT)
+        self.Button(
+            frame, text='Refresh',
+            command=callback_app_backup_refresh_btn,
+            width=btn_width
+        ).pack(side=tk.LEFT)
+        self.Button(
+            frame, text='Save',
+            command=callback_app_backup_save_btn,
+            width=btn_width
+        ).pack(side=tk.LEFT)
+        self.Button(
+            frame, text='Close',
+            command=self.shift_to_main_app,
+            width=btn_width
+        ).pack(side=tk.LEFT)
+
     def build_result(self):
         """Build result text"""
         self.result_frame.rowconfigure(0, weight=1)
         self.result_frame.columnconfigure(0, weight=1)
         self.result_textarea = self.TextArea(
-            self.result_frame, width=20, height=5, wrap='none'
+            self.result_frame, width=20, height=5, wrap='none',
+            name='main_result_textarea'
         )
         self.result_textarea.grid(row=0, column=0, sticky='nswe')
         vscrollbar = ttk.Scrollbar(
