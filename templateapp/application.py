@@ -1152,7 +1152,7 @@ class Application:
                 if self.test_data_chkbox_var.get() and test_data:  # noqa
                     result += fmt.format(test_data) if result else test_data
 
-                if self.tabular_chkbox_var.get():
+                if rows and self.tabular_chkbox_var.get():
                     tabular_obj = Tabular(rows)
                     tabular_data = tabular_obj.get()
                     result += fmt.format(tabular_data) if result else tabular_data
