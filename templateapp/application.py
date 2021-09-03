@@ -1486,6 +1486,7 @@ class Application:
         self.result_frame.columnconfigure(0, weight=1)
         self.result_textarea = self.TextArea(
             self.result_frame, width=20, height=5, wrap='none',
+            state=tk.DISABLED,
             name='main_result_textarea'
         )
         self.result_textarea.grid(row=0, column=0, sticky='nswe')
