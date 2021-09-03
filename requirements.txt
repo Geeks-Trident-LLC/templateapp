@@ -1,2 +1,4 @@
 textfsm
 regexapp
+dlquery
+pyyaml
