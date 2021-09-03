@@ -451,6 +451,7 @@ class Application:
         self.snapshot.update(result='')
         self.snapshot.update(template='')
         self.snapshot.update(is_built=False)
+        self.snapshot.update(switch_app_template='')
         self.snapshot.update(switch_app_user_data='')
         self.snapshot.update(switch_app_result_data='')
 
@@ -889,6 +890,7 @@ class Application:
                     self.snapshot.update(user_data=user_data)
                     self.snapshot.update(result=factory.template)
                     self.snapshot.update(template=factory.template)
+                    self.snapshot.update(swich_app_template='')
                     self.snapshot.update(is_built=True)
                     self.test_data_btn_var.set('Test Data')
                     self.save_as_btn.config(state=tk.NORMAL)
@@ -1186,7 +1188,8 @@ class Application:
                 self.snapshot.update(switch_app_user_data=user_data)
                 self.snapshot.update(switch_app_result_data=result_data)
 
-                self.set_textarea(self.input_textarea, result_data)
+                data = self.snapshot.switch_app_template or self.snapshot.template  # noqa
+                self.set_textarea(self.input_textarea, data)
                 self.set_textarea(self.result_textarea, user_template.read())
                 self.shift_to_backup_app()
 
@@ -1219,6 +1222,7 @@ class Application:
             try:
                 kwargs = self.get_template_args()
                 factory = TemplateBuilder(user_data=user_data, **kwargs)
+                self.snapshot.update(switch_app_template=factory.template)
                 self.set_textarea(self.input_textarea, factory.template)
             except Exception as ex:
                 error = '{}: {}'.format(type(ex).__name__, ex)
@@ -1244,7 +1248,7 @@ class Application:
             user_data = self.get_textarea(self.input_textarea)
             user_template.write(tmpl_name, user_data.strip())
 
-            self.set_textarea(self.result_textarea, user_template.content)
+            self.set_textarea(self.result_textarea, user_template.read())
 
         # def callback_rf_btn():
         #     create_msgbox(
