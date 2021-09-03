@@ -1218,7 +1218,8 @@ class Application:
         #         info="Robotframework button is available in Pro or Enterprise Edition."
         #     )
 
-        btn_width = 5.5 if self.is_macos else 8
+        # customize width for buttons
+        btn_width = 6 if self.is_macos else 8
         # open button
         open_file_btn = self.Button(
             self.entry_frame, text='Open',
@@ -1232,21 +1233,23 @@ class Application:
         self.save_as_btn = self.Button(
             self.entry_frame, text='Save As',
             name='main_save_as_btn',
+            state=tk.DISABLED,
             command=callback_save_as_btn,
             width=btn_width
         )
         self.save_as_btn.grid(row=0, column=1, pady=(2, 0))
-        self.save_as_btn.config(state=tk.DISABLED)
 
+        # customize width for buttons
+        btn_width = 5.5 if self.is_macos else 8
         # copy button
         self.copy_text_btn = self.Button(
             self.entry_frame, text='Copy',
             name='main_copy_btn',
+            state=tk.DISABLED,
             command=callback_copy_text_btn,
             width=btn_width
         )
         self.copy_text_btn.grid(row=0, column=2, pady=(2, 0))
-        self.copy_text_btn.config(state=tk.DISABLED)
 
         # paste button
         paste_text_btn = ttk.Button(
@@ -1307,37 +1310,41 @@ class Application:
         self.test_data_btn = self.Button(
             self.entry_frame,
             name='main_test_data_btn',
+            state=tk.DISABLED,
             command=callback_test_data_btn,
             textvariable=self.test_data_btn_var,
             width=btn_width
         )
         self.test_data_btn.grid(row=0, column=9, pady=(2, 0))
-        self.test_data_btn.config(state=tk.DISABLED)
 
+        # customize width for buttons
+        btn_width = 6 if self.is_macos else 8
         # result button
         self.result_btn = self.Button(
             self.entry_frame, text='Result',
             name='main_result_btn',
+            state=tk.DISABLED,
             command=callback_result_btn,
             width=btn_width
         )
         self.result_btn.grid(row=1, column=0, padx=(2, 0), pady=(0, 2))
-        self.result_btn.config(state=tk.DISABLED)
 
         # store button
         self.store_btn = self.Button(
             self.entry_frame, text='Store',
             name='main_store_btn',
+            state=tk.DISABLED,
             command=callback_store_btn,
             width=btn_width
         )
         self.store_btn.grid(row=1, column=1, pady=(0, 2))
-        self.store_btn.config(state=tk.DISABLED)
 
         # frame container for checkbox and textbox
         frame = self.Frame(self.entry_frame)
         frame.grid(row=1, column=2, pady=(0, 2), columnspan=8, sticky=tk.W)
 
+        # customize x padding for search checkbox
+        x = 0 if self.is_macos else 6 if self.is_linux else 2
         # search checkbox
         self.search_chkbox = self.CheckBox(
             frame, text='search',
@@ -1346,7 +1353,7 @@ class Application:
             onvalue=True, offvalue=False,
             command=callback_search_chkbox
         )
-        self.search_chkbox.grid(row=0, column=0, padx=4, sticky=tk.W)
+        self.search_chkbox.grid(row=0, column=0, padx=(0, x), sticky=tk.W)
 
         # template name textbox
         self.TextBox(
