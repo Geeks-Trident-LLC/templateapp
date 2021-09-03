@@ -34,7 +34,7 @@ def get_relative_center_location(parent, width, height):
 
     Parameters
     ----------
-    parent (tkinter): tkinter component instance.
+    parent (tkinter): tkinter widget instance.
     width (int): a width of a child window.
     height (int): a height of a child window..
 
@@ -403,7 +403,7 @@ class Application:
         self.is_linux = platform.system() == 'Linux'
         self.is_window = platform.system() == 'Windows'
 
-        # standardize tkinter component for macOS, Linux, and Window operating system
+        # standardize tkinter widget for macOS, Linux, and Window operating system
         self.RadioButton = tk.Radiobutton if self.is_linux else ttk.Radiobutton
         self.CheckBox = tk.Checkbutton if self.is_linux else ttk.Checkbutton
         self.Label = ttk.Label
@@ -420,7 +420,7 @@ class Application:
         self.root.minsize(200, 200)
         self.root.option_add('*tearOff', False)
 
-        # tkinter components for main layout
+        # tkinter widgets for main layout
         self.panedwindow = None
         self.text_frame = None
         self.entry_frame = None
@@ -507,16 +507,17 @@ class Application:
         self.tabular_chkbox_var.set(True)
 
     @classmethod
-    def get_textarea(cls, node):
-        """Get data from TextArea component
+    def get_textarea(cls, widget):
+        """Get data from TextArea widget
         Parameters
         ----------
-        node (tk.Text): a tk.Text component
+        widget (tk.Text): a tk.Text widget
+
         Returns
         -------
-        str: a text from TextArea component
+        str: a text from TextArea widget
         """
-        text = node.get('1.0', 'end')
+        text = widget.get('1.0', 'end')
         last_char = text[-1]
         last_two_chars = text[-2:]
         if last_char == '\r' or last_char == '\n':
@@ -526,32 +527,32 @@ class Application:
         else:
             return text
 
-    def set_textarea(self, node, data, title=''):
-        """set data for TextArea component
+    def set_textarea(self, widget, data, title=''):
+        """set data for TextArea widget
         Parameters
         ----------
-        node (tk.Text): a tk.Text component
+        widget (tk.Text): a tk.Text widget
         data (any): a data
         title (str): a title of window
         """
         data, title = str(data), str(title).strip()
 
         title and self.set_title(title=title)
-        node.delete("1.0", "end")
-        node.insert(tk.INSERT, data)
+        widget.delete("1.0", "end")
+        widget.insert(tk.INSERT, data)
 
-    def set_title(self, node=None, title=''):
-        """Set a new title for tkinter component.
+    def set_title(self, widget=None, title=''):
+        """Set a new title for tkinter widget.
 
         Parameters
         ----------
-        node (tkinter): a tkinter component.
+        widget (tkinter): a tkinter widget.
         title (str): a title.  Default is empty.
         """
-        node = node or self.root
+        widget = widget or self.root
         btitle = self._base_title
         title = '{} - {}'.format(title, btitle) if title else btitle
-        node.title(title)
+        widget.title(title)
 
     def shift_to_main_app(self):
         """Switch from backup app to main app"""
@@ -619,7 +620,7 @@ class Application:
             self.browser.open_new_tab(url_lbl.link)
 
         about = tk.Toplevel(self.root)
-        self.set_title(node=about, title='About')
+        self.set_title(widget=about, title='About')
         width, height = 440, 400
         x, y = get_relative_center_location(self.root, width, height)
         about.geometry('{}x{}+{}+{}'.format(width, height, x, y))
@@ -688,7 +689,7 @@ class Application:
         """Callback for Menu Preferences > Settings"""
 
         settings = tk.Toplevel(self.root)
-        self.set_title(node=settings, title='Settings')
+        self.set_title(widget=settings, title='Settings')
         width = 520 if self.is_macos else 474 if self.is_linux else 370
         height = 258 if self.is_macos else 242 if self.is_linux else 234
         x, y = get_relative_center_location(self.root, width, height)
