@@ -442,7 +442,7 @@ class Application:
 
         self.curr_widget = None
         self.prev_widget = None
-        self.root.bind_all("<Button-1>", lambda e: self.callback_focus(e))
+        self.root.bind("<Button-1>", lambda e: self.callback_focus(e))
 
         # datastore
         self.snapshot = Snapshot()
@@ -578,12 +578,15 @@ class Application:
         self.paned_window.remove(self.entry_frame)
         self.paned_window.insert(1, self.backup_frame)
 
-    def callback_focus(self, event):    # noqa
+    def callback_focus(self, event):
         """Callback for widget selection"""
-        widget = self.root.focus_get()
-        if widget != self.curr_widget:
-            self.prev_widget = self.curr_widget
-            self.curr_widget = self.root.focus_get()
+        try:
+            widget = self.root.focus_get()
+            if widget != self.curr_widget:
+                self.prev_widget = self.curr_widget
+                self.curr_widget = self.root.focus_get()
+        except Exception as ex:     # noqa
+            print('... skip {}'.format(getattr(event, 'widget', event)))
 
     def callback_file_exit(self):
         """Callback for Menu File > Exit."""
