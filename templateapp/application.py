@@ -555,8 +555,8 @@ class Application:
 
     def shift_to_main_app(self):
         """Switch from backup app to main app"""
-        user_data = self.snapshot.switch_app_user_data
-        result_data = self.snapshot.switch_app_result_data
+        user_data = self.snapshot.switch_app_user_data      # noqa
+        result_data = self.snapshot.switch_app_result_data  # noqa
         self.snapshot.update(switch_app_user_data='')
         self.snapshot.update(switch_app_result_data='')
         self.set_textarea(self.textarea, user_data)
@@ -569,7 +569,7 @@ class Application:
         self.panedwindow.remove(self.entry_frame)
         self.panedwindow.insert(1, self.backup_frame)
 
-    def callback_focus(self, event):
+    def callback_focus(self, event):    # noqa
         """Callback for widget selection"""
         self.prev_widget = self.curr_widget
         self.curr_widget = self.root.focus_get()
@@ -921,26 +921,34 @@ class Application:
                     stream.write(content)
 
         def callback_clear_text_btn():
-            self.textarea.delete("1.0", "end")
-            self.result_textarea.delete("1.0", "end")
-            self.save_as_btn.config(state=tk.DISABLED)
-            self.copy_text_btn.config(state=tk.DISABLED)
-            self.test_data_btn.config(state=tk.DISABLED)
-            self.result_btn.config(state=tk.DISABLED)
-            self.store_btn.config(state=tk.DISABLED)
+            prev_widget_name = str(self.prev_widget)
+            if prev_widget_name.endswith('.main_template_name_textbox'):
+                self.prev_widget.delete(0, tk.END)
+            elif prev_widget_name.endswith('.main_result_textarea'):
+                title = 'Readonly Window'
+                w = 'Result window is READONLY text area.  CAN NOT clear.'
+                create_msgbox(title=title, warning=w)
+            else:
+                self.textarea.delete("1.0", "end")
+                self.result_textarea.delete("1.0", "end")
+                self.save_as_btn.config(state=tk.DISABLED)
+                self.copy_text_btn.config(state=tk.DISABLED)
+                self.test_data_btn.config(state=tk.DISABLED)
+                self.result_btn.config(state=tk.DISABLED)
+                self.store_btn.config(state=tk.DISABLED)
 
-            self.snapshot.update(user_data='')
-            self.snapshot.update(test_data=None)
-            self.snapshot.update(result='')
-            self.snapshot.update(template='')
-            self.snapshot.update(is_built=False)
+                self.snapshot.update(user_data='')
+                self.snapshot.update(test_data=None)
+                self.snapshot.update(result='')
+                self.snapshot.update(template='')
+                self.snapshot.update(is_built=False)
 
-            self.test_data_btn_var.set('Test Data')
-            self.build_btn_var.set('Build')
-            self.template_name_var.set('')
-            self.search_chkbox_var.set(False)
-            # self.root.clipboard_clear()
-            self.set_title()
+                self.test_data_btn_var.set('Test Data')
+                self.build_btn_var.set('Build')
+                self.template_name_var.set('')
+                self.search_chkbox_var.set(False)
+                # self.root.clipboard_clear()
+                self.set_title()
 
         def callback_copy_text_btn():
             content = Application.get_textarea(self.result_textarea)
@@ -1191,7 +1199,7 @@ class Application:
                     self.store_btn.config(state=tk.NORMAL)
 
         def callback_app_backup_refresh_btn():
-            user_data = self.snapshot.switch_app_user_data
+            user_data = self.snapshot.switch_app_user_data      # noqa
             try:
                 kwargs = self.get_template_args()
                 factory = TemplateBuilder(user_data=user_data, **kwargs)
@@ -1203,7 +1211,6 @@ class Application:
         def callback_app_backup_save_btn():
             user_template = UserTemplate()
             tmpl_name = self.template_name_var.get()
-            template = user_template.search(tmpl_name)
             status = user_template.status
             is_invalid_format = status == 'INVALID-TEMPLATE-FORMAT'
             is_invalid_name = status == 'INVALID-TEMPLATE-NAME-FORMAT'
