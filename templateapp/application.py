@@ -1202,11 +1202,17 @@ class Application:
 
             if self.search_chkbox_var.get():
                 self.build_btn_var.set('Search')
-                self.store_btn.config(state=tk.DISABLED)
+                self.snippet_btn.configure(state=tk.DISABLED)
+                self.unittest_btn.configure(state=tk.DISABLED)
+                self.pytest_btn.configure(state=tk.DISABLED)
+                self.store_btn.configure(state=tk.DISABLED)
             else:
                 self.build_btn_var.set('Build')
                 if self.snapshot.is_built:  # noqa
-                    self.store_btn.config(state=tk.NORMAL)
+                    self.snippet_btn.configure(state=tk.NORMAL)
+                    self.unittest_btn.configure(state=tk.NORMAL)
+                    self.pytest_btn.configure(state=tk.NORMAL)
+                    self.store_btn.configure(state=tk.NORMAL)
 
         def callback_app_backup_refresh_btn():
             user_data = self.snapshot.switch_app_user_data      # noqa
