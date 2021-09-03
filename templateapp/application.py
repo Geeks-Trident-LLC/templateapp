@@ -285,7 +285,7 @@ class UserTemplate:
                 create_msgbox(title=title, error=error)
                 return ''
 
-            yaml_obj = yaml.load(self.content, Loader=yaml.SafeLoader)
+            yaml_obj = yaml.load(self.read(), Loader=yaml.SafeLoader)
 
             if yaml_obj is None:
                 yaml_obj = dict()
