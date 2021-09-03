@@ -34,7 +34,7 @@ def get_relative_center_location(parent, width, height):
 
     Parameters
     ----------
-    parent (tkinter): tkinter component instance.
+    parent (tkinter): tkinter widget instance.
     width (int): a width of a child window.
     height (int): a height of a child window..
 
@@ -285,7 +285,7 @@ class UserTemplate:
                 create_msgbox(title=title, error=error)
                 return ''
 
-            yaml_obj = yaml.load(self.content, Loader=yaml.SafeLoader)
+            yaml_obj = yaml.load(self.read(), Loader=yaml.SafeLoader)
 
             if yaml_obj is None:
                 yaml_obj = dict()
@@ -403,7 +403,7 @@ class Application:
         self.is_linux = platform.system() == 'Linux'
         self.is_window = platform.system() == 'Windows'
 
-        # standardize tkinter component for macOS, Linux, and Window operating system
+        # standardize tkinter widget for macOS, Linux, and Window operating system
         self.RadioButton = tk.Radiobutton if self.is_linux else ttk.Radiobutton
         self.CheckBox = tk.Checkbutton if self.is_linux else ttk.Checkbutton
         self.Label = ttk.Label
@@ -420,14 +420,14 @@ class Application:
         self.root.minsize(200, 200)
         self.root.option_add('*tearOff', False)
 
-        # tkinter components for main layout
-        self.panedwindow = None
+        # tkinter widgets for main layout
+        self.paned_window = None
         self.text_frame = None
         self.entry_frame = None
         self.backup_frame = None
         self.result_frame = None
 
-        self.textarea = None
+        self.input_textarea = None
         self.result_textarea = None
 
         self.save_as_btn = None
@@ -451,6 +451,7 @@ class Application:
         self.snapshot.update(result='')
         self.snapshot.update(template='')
         self.snapshot.update(is_built=False)
+        self.snapshot.update(switch_app_template='')
         self.snapshot.update(switch_app_user_data='')
         self.snapshot.update(switch_app_result_data='')
 
@@ -507,16 +508,18 @@ class Application:
         self.tabular_chkbox_var.set(True)
 
     @classmethod
-    def get_textarea(cls, node):
-        """Get data from TextArea component
+    def get_textarea(cls, widget):
+        """Get data from TextArea widget
+
         Parameters
         ----------
-        node (tk.Text): a tk.Text component
+        widget (tk.Text): a tk.Text widget
+
         Returns
         -------
-        str: a text from TextArea component
+        str: a text from TextArea widget
         """
-        text = node.get('1.0', 'end')
+        text = widget.get('1.0', 'end')
         last_char = text[-1]
         last_two_chars = text[-2:]
         if last_char == '\r' or last_char == '\n':
@@ -526,32 +529,38 @@ class Application:
         else:
             return text
 
-    def set_textarea(self, node, data, title=''):
-        """set data for TextArea component
+    def set_textarea(self, widget, data, title=''):
+        """set data for TextArea widget
+
         Parameters
         ----------
-        node (tk.Text): a tk.Text component
+        widget (tk.Text): a tk.Text widget
         data (any): a data
         title (str): a title of window
         """
         data, title = str(data), str(title).strip()
 
-        title and self.set_title(title=title)
-        node.delete("1.0", "end")
-        node.insert(tk.INSERT, data)
+        curr_state = widget['state']
+        widget.configure(state=tk.NORMAL)
 
-    def set_title(self, node=None, title=''):
-        """Set a new title for tkinter component.
+        title and self.set_title(title=title)
+        widget.delete("1.0", "end")
+        widget.insert(tk.INSERT, data)
+
+        widget.configure(state=curr_state)
+
+    def set_title(self, widget=None, title=''):
+        """Set a new title for tkinter widget.
 
         Parameters
         ----------
-        node (tkinter): a tkinter component.
+        widget (tkinter): a tkinter widget.
         title (str): a title.  Default is empty.
         """
-        node = node or self.root
+        widget = widget or self.root
         btitle = self._base_title
         title = '{} - {}'.format(title, btitle) if title else btitle
-        node.title(title)
+        widget.title(title)
 
     def shift_to_main_app(self):
         """Switch from backup app to main app"""
@@ -559,20 +568,22 @@ class Application:
         result_data = self.snapshot.switch_app_result_data  # noqa
         self.snapshot.update(switch_app_user_data='')
         self.snapshot.update(switch_app_result_data='')
-        self.set_textarea(self.textarea, user_data)
+        self.set_textarea(self.input_textarea, user_data)
         self.set_textarea(self.result_textarea, result_data)
-        self.panedwindow.remove(self.backup_frame)
-        self.panedwindow.insert(1, self.entry_frame)
+        self.paned_window.remove(self.backup_frame)
+        self.paned_window.insert(1, self.entry_frame)
 
     def shift_to_backup_app(self):
         """Switch from main app to backup app"""
-        self.panedwindow.remove(self.entry_frame)
-        self.panedwindow.insert(1, self.backup_frame)
+        self.paned_window.remove(self.entry_frame)
+        self.paned_window.insert(1, self.backup_frame)
 
     def callback_focus(self, event):    # noqa
         """Callback for widget selection"""
-        self.prev_widget = self.curr_widget
-        self.curr_widget = self.root.focus_get()
+        widget = self.root.focus_get()
+        if widget != self.curr_widget:
+            self.prev_widget = self.curr_widget
+            self.curr_widget = self.root.focus_get()
 
     def callback_file_exit(self):
         """Callback for Menu File > Exit."""
@@ -592,7 +603,7 @@ class Application:
                 self.test_data_btn_var.set('Test Data')
                 self.set_textarea(self.result_textarea, '')
                 self.snapshot.update(test_data=content)
-                self.set_textarea(self.textarea, content, title=filename)
+                self.set_textarea(self.input_textarea, content, title=filename)
 
     def callback_help_documentation(self):
         """Callback for Menu Help > Getting Started."""
@@ -617,7 +628,7 @@ class Application:
             self.browser.open_new_tab(url_lbl.link)
 
         about = tk.Toplevel(self.root)
-        self.set_title(node=about, title='About')
+        self.set_title(widget=about, title='About')
         width, height = 440, 400
         x, y = get_relative_center_location(self.root, width, height)
         about.geometry('{}x{}+{}+{}'.format(width, height, x, y))
@@ -626,20 +637,20 @@ class Application:
         top_frame = self.Frame(about)
         top_frame.pack(fill=tk.BOTH, expand=True)
 
-        panedwindow = self.PanedWindow(top_frame, orient=tk.VERTICAL)
-        panedwindow.pack(fill=tk.BOTH, expand=True, padx=8, pady=12)
+        paned_window = self.PanedWindow(top_frame, orient=tk.VERTICAL)
+        paned_window.pack(fill=tk.BOTH, expand=True, padx=8, pady=12)
 
         # company
-        frame = self.Frame(panedwindow, width=420, height=20)
-        panedwindow.add(frame, weight=1)
+        frame = self.Frame(paned_window, width=420, height=20)
+        paned_window.add(frame, weight=1)
 
         fmt = 'Templateapp v{} ({} Edition)'
         company_lbl = self.Label(frame, text=fmt.format(version, edition))
         company_lbl.pack(side=tk.LEFT)
 
         # URL
-        frame = self.Frame(panedwindow, width=420, height=20)
-        panedwindow.add(frame, weight=1)
+        frame = self.Frame(paned_window, width=420, height=20)
+        paned_window.add(frame, weight=1)
 
         url = Data.repo_url
         self.Label(frame, text='URL:').pack(side=tk.LEFT)
@@ -658,10 +669,10 @@ class Application:
 
         # license textbox
         lframe = self.LabelFrame(
-            panedwindow, height=300, width=420,
+            paned_window, height=300, width=420,
             text=Data.license_name
         )
-        panedwindow.add(lframe, weight=7)
+        paned_window.add(lframe, weight=7)
 
         width = 55 if self.is_macos else 48
         height = 19 if self.is_macos else 15 if self.is_linux else 16
@@ -674,8 +685,8 @@ class Application:
         txtbox.config(state=tk.DISABLED)
 
         # footer - copyright
-        frame = self.Frame(panedwindow, width=380, height=20)
-        panedwindow.add(frame, weight=1)
+        frame = self.Frame(paned_window, width=380, height=20)
+        paned_window.add(frame, weight=1)
 
         footer = self.Label(frame, text=Data.copyright_text)
         footer.pack(side=tk.LEFT)
@@ -686,7 +697,7 @@ class Application:
         """Callback for Menu Preferences > Settings"""
 
         settings = tk.Toplevel(self.root)
-        self.set_title(node=settings, title='Settings')
+        self.set_title(widget=settings, title='Settings')
         width = 520 if self.is_macos else 474 if self.is_linux else 370
         height = 258 if self.is_macos else 242 if self.is_linux else 234
         x, y = get_relative_center_location(self.root, width, height)
@@ -706,7 +717,7 @@ class Application:
         pady = 0 if self.is_macos else 1
 
         self.Label(
-            lframe_args, text='author'
+            lframe_args, text='Author'
         ).grid(row=0, column=0, columnspan=2, padx=2, pady=pady, sticky=tk.W+tk.N)
         self.TextBox(
             lframe_args, width=45,
@@ -714,7 +725,7 @@ class Application:
         ).grid(row=0, column=2, columnspan=4, padx=2, pady=pady, sticky=tk.W)
 
         self.Label(
-            lframe_args, text='email'
+            lframe_args, text='Email'
         ).grid(row=1, column=0, columnspan=2, padx=2, pady=pady, sticky=tk.W+tk.N)
         self.TextBox(
             lframe_args, width=45,
@@ -722,7 +733,7 @@ class Application:
         ).grid(row=1, column=2, columnspan=4, padx=2, pady=pady, sticky=tk.W)
 
         self.Label(
-            lframe_args, text='company'
+            lframe_args, text='Company'
         ).grid(row=2, column=0, columnspan=2, padx=2, pady=pady, sticky=tk.W+tk.N)
         self.TextBox(
             lframe_args, width=45,
@@ -730,7 +741,7 @@ class Application:
         ).grid(row=2, column=2, columnspan=4, padx=2, pady=pady, sticky=tk.W)
 
         self.Label(
-            lframe_args, text='filename'
+            lframe_args, text='Filename'
         ).grid(row=4, column=0, columnspan=2, padx=2, pady=pady, sticky=tk.W+tk.N)
         self.TextBox(
             lframe_args, width=45,
@@ -738,7 +749,7 @@ class Application:
         ).grid(row=4, column=2, columnspan=4, padx=2, pady=pady, sticky=tk.W)
 
         self.Label(
-            lframe_args, text='description'
+            lframe_args, text='Description'
         ).grid(row=5, column=0, columnspan=2, padx=2, pady=pady, sticky=tk.W+tk.N)
         self.TextBox(
             lframe_args, width=45,
@@ -819,44 +830,44 @@ class Application:
 
     def build_frame(self):
         """Build layout for regex GUI."""
-        self.panedwindow = self.PanedWindow(self.root, orient=tk.VERTICAL)
-        self.panedwindow.pack(fill=tk.BOTH, expand=True, padx=2, pady=2)
+        self.paned_window = self.PanedWindow(self.root, orient=tk.VERTICAL)
+        self.paned_window.pack(fill=tk.BOTH, expand=True, padx=2, pady=2)
 
         self.text_frame = self.Frame(
-            self.panedwindow, width=600, height=300, relief=tk.RIDGE
+            self.paned_window, width=600, height=300, relief=tk.RIDGE
         )
         self.entry_frame = self.Frame(
-            self.panedwindow, width=600, height=10, relief=tk.RIDGE
+            self.paned_window, width=600, height=10, relief=tk.RIDGE
         )
         self.backup_frame = self.Frame(
-            self.panedwindow, width=600, height=10, relief=tk.RIDGE
+            self.paned_window, width=600, height=10, relief=tk.RIDGE
         )
         self.result_frame = self.Frame(
-            self.panedwindow, width=600, height=350, relief=tk.RIDGE
+            self.paned_window, width=600, height=350, relief=tk.RIDGE
         )
-        self.panedwindow.add(self.text_frame, weight=2)
-        self.panedwindow.add(self.entry_frame)
-        self.panedwindow.add(self.result_frame, weight=7)
+        self.paned_window.add(self.text_frame, weight=2)
+        self.paned_window.add(self.entry_frame)
+        self.paned_window.add(self.result_frame, weight=7)
 
     def build_textarea(self):
         """Build input text for regex GUI."""
 
         self.text_frame.rowconfigure(0, weight=1)
         self.text_frame.columnconfigure(0, weight=1)
-        self.textarea = self.TextArea(
+        self.input_textarea = self.TextArea(
             self.text_frame, width=20, height=5, wrap='none',
             name='main_input_textarea',
         )
-        self.textarea.grid(row=0, column=0, sticky='nswe')
+        self.input_textarea.grid(row=0, column=0, sticky='nswe')
         vscrollbar = ttk.Scrollbar(
-            self.text_frame, orient=tk.VERTICAL, command=self.textarea.yview
+            self.text_frame, orient=tk.VERTICAL, command=self.input_textarea.yview
         )
         vscrollbar.grid(row=0, column=1, sticky='ns')
         hscrollbar = ttk.Scrollbar(
-            self.text_frame, orient=tk.HORIZONTAL, command=self.textarea.xview
+            self.text_frame, orient=tk.HORIZONTAL, command=self.input_textarea.xview
         )
         hscrollbar.grid(row=1, column=0, sticky='ew')
-        self.textarea.config(
+        self.input_textarea.config(
             yscrollcommand=vscrollbar.set, xscrollcommand=hscrollbar.set
         )
 
@@ -865,7 +876,7 @@ class Application:
 
         def callback_build_btn():
             if self.build_btn_var.get() == 'Build':
-                user_data = Application.get_textarea(self.textarea)
+                user_data = Application.get_textarea(self.input_textarea)
                 if not user_data:
                     create_msgbox(
                         title='Empty Data',
@@ -879,6 +890,7 @@ class Application:
                     self.snapshot.update(user_data=user_data)
                     self.snapshot.update(result=factory.template)
                     self.snapshot.update(template=factory.template)
+                    self.snapshot.update(swich_app_template='')
                     self.snapshot.update(is_built=True)
                     self.test_data_btn_var.set('Test Data')
                     self.save_as_btn.config(state=tk.NORMAL)
@@ -929,7 +941,7 @@ class Application:
                 w = 'Result window is READONLY text area.  CAN NOT clear.'
                 create_msgbox(title=title, warning=w)
             else:
-                self.textarea.delete("1.0", "end")
+                self.input_textarea.delete("1.0", "end")
                 self.result_textarea.delete("1.0", "end")
                 self.save_as_btn.config(state=tk.DISABLED)
                 self.copy_text_btn.config(state=tk.DISABLED)
@@ -969,7 +981,7 @@ class Application:
                 self.snapshot.update(result='')
 
                 title = '<<PASTE - Clipboard>>'
-                self.set_textarea(self.textarea, data, title=title)
+                self.set_textarea(self.input_textarea, data, title=title)
             except Exception as ex:  # noqa
                 create_msgbox(
                     title='Empty Clipboard',
@@ -986,7 +998,7 @@ class Application:
                 )
                 return
 
-            user_data = Application.get_textarea(self.textarea)
+            user_data = Application.get_textarea(self.input_textarea)
             if not user_data:
                 create_msgbox(
                     title='Empty Data',
@@ -1021,7 +1033,7 @@ class Application:
                 )
                 return
 
-            user_data = Application.get_textarea(self.textarea)
+            user_data = Application.get_textarea(self.input_textarea)
             if not user_data:
                 create_msgbox(
                     title='Empty Data',
@@ -1056,7 +1068,7 @@ class Application:
                 )
                 return
 
-            user_data = Application.get_textarea(self.textarea)
+            user_data = Application.get_textarea(self.input_textarea)
             if not user_data:
                 create_msgbox(
                     title='Empty Data',
@@ -1113,7 +1125,7 @@ class Application:
                 )
                 return
 
-            user_data = Application.get_textarea(self.textarea)
+            user_data = Application.get_textarea(self.input_textarea)
             if not user_data:
                 create_msgbox(
                     title='Empty Data',
@@ -1142,7 +1154,7 @@ class Application:
                 if self.test_data_chkbox_var.get() and test_data:  # noqa
                     result += fmt.format(test_data) if result else test_data
 
-                if self.tabular_chkbox_var.get():
+                if rows and self.tabular_chkbox_var.get():
                     tabular_obj = Tabular(rows)
                     tabular_data = tabular_obj.get()
                     result += fmt.format(tabular_data) if result else tabular_data
@@ -1171,12 +1183,13 @@ class Application:
                     user_template.create(confirmed=False)
 
             if user_template.is_exist():
-                user_data = self.get_textarea(self.textarea)
+                user_data = self.get_textarea(self.input_textarea)
                 result_data = self.get_textarea(self.result_textarea)
                 self.snapshot.update(switch_app_user_data=user_data)
                 self.snapshot.update(switch_app_result_data=result_data)
 
-                self.set_textarea(self.textarea, result_data)
+                data = self.snapshot.switch_app_template or self.snapshot.template  # noqa
+                self.set_textarea(self.input_textarea, data)
                 self.set_textarea(self.result_textarea, user_template.read())
                 self.shift_to_backup_app()
 
@@ -1192,18 +1205,25 @@ class Application:
 
             if self.search_chkbox_var.get():
                 self.build_btn_var.set('Search')
-                self.store_btn.config(state=tk.DISABLED)
+                self.snippet_btn.configure(state=tk.DISABLED)
+                self.unittest_btn.configure(state=tk.DISABLED)
+                self.pytest_btn.configure(state=tk.DISABLED)
+                self.store_btn.configure(state=tk.DISABLED)
             else:
                 self.build_btn_var.set('Build')
                 if self.snapshot.is_built:  # noqa
-                    self.store_btn.config(state=tk.NORMAL)
+                    self.snippet_btn.configure(state=tk.NORMAL)
+                    self.unittest_btn.configure(state=tk.NORMAL)
+                    self.pytest_btn.configure(state=tk.NORMAL)
+                    self.store_btn.configure(state=tk.NORMAL)
 
         def callback_app_backup_refresh_btn():
             user_data = self.snapshot.switch_app_user_data      # noqa
             try:
                 kwargs = self.get_template_args()
                 factory = TemplateBuilder(user_data=user_data, **kwargs)
-                self.set_textarea(self.textarea, factory.template)
+                self.snapshot.update(switch_app_template=factory.template)
+                self.set_textarea(self.input_textarea, factory.template)
             except Exception as ex:
                 error = '{}: {}'.format(type(ex).__name__, ex)
                 create_msgbox(title='RegexBuilder Error', error=error)
@@ -1225,10 +1245,10 @@ class Application:
                 create_msgbox(title=title, info=info)
                 return
 
-            user_data = self.get_textarea(self.textarea)
+            user_data = self.get_textarea(self.input_textarea)
             user_template.write(tmpl_name, user_data.strip())
 
-            self.set_textarea(self.result_textarea, user_template.content)
+            self.set_textarea(self.result_textarea, user_template.read())
 
         # def callback_rf_btn():
         #     create_msgbox(
@@ -1476,6 +1496,7 @@ class Application:
         self.result_frame.columnconfigure(0, weight=1)
         self.result_textarea = self.TextArea(
             self.result_frame, width=20, height=5, wrap='none',
+            state=tk.DISABLED,
             name='main_result_textarea'
         )
         self.result_textarea.grid(row=0, column=0, sticky='nswe')
