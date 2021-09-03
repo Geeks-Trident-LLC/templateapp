@@ -440,6 +440,10 @@ class Application:
         self.store_btn = None
         self.search_chkbox = None
 
+        self.curr_widget = None
+        self.prev_widget = None
+        self.root.bind_all("<Button-1>", lambda e: self.callback_focus(e))
+
         # datastore
         self.snapshot = Snapshot()
         self.snapshot.update(user_data='')
@@ -550,8 +554,9 @@ class Application:
         node.title(title)
 
     def shift_to_main_app(self):
-        user_data = self.snapshot.switch_app_user_data
-        result_data = self.snapshot.switch_app_result_data
+        """Switch from backup app to main app"""
+        user_data = self.snapshot.switch_app_user_data      # noqa
+        result_data = self.snapshot.switch_app_result_data  # noqa
         self.snapshot.update(switch_app_user_data='')
         self.snapshot.update(switch_app_result_data='')
         self.set_textarea(self.textarea, user_data)
@@ -560,8 +565,14 @@ class Application:
         self.panedwindow.insert(1, self.entry_frame)
 
     def shift_to_backup_app(self):
+        """Switch from main app to backup app"""
         self.panedwindow.remove(self.entry_frame)
         self.panedwindow.insert(1, self.backup_frame)
+
+    def callback_focus(self, event):    # noqa
+        """Callback for widget selection"""
+        self.prev_widget = self.curr_widget
+        self.curr_widget = self.root.focus_get()
 
     def callback_file_exit(self):
         """Callback for Menu File > Exit."""
@@ -910,26 +921,34 @@ class Application:
                     stream.write(content)
 
         def callback_clear_text_btn():
-            self.textarea.delete("1.0", "end")
-            self.result_textarea.delete("1.0", "end")
-            self.save_as_btn.config(state=tk.DISABLED)
-            self.copy_text_btn.config(state=tk.DISABLED)
-            self.test_data_btn.config(state=tk.DISABLED)
-            self.result_btn.config(state=tk.DISABLED)
-            self.store_btn.config(state=tk.DISABLED)
+            prev_widget_name = str(self.prev_widget)
+            if prev_widget_name.endswith('.main_template_name_textbox'):
+                self.prev_widget.delete(0, tk.END)
+            elif prev_widget_name.endswith('.main_result_textarea'):
+                title = 'Readonly Window'
+                w = 'Result window is READONLY text area.  CAN NOT clear.'
+                create_msgbox(title=title, warning=w)
+            else:
+                self.textarea.delete("1.0", "end")
+                self.result_textarea.delete("1.0", "end")
+                self.save_as_btn.config(state=tk.DISABLED)
+                self.copy_text_btn.config(state=tk.DISABLED)
+                self.test_data_btn.config(state=tk.DISABLED)
+                self.result_btn.config(state=tk.DISABLED)
+                self.store_btn.config(state=tk.DISABLED)
 
-            self.snapshot.update(user_data='')
-            self.snapshot.update(test_data=None)
-            self.snapshot.update(result='')
-            self.snapshot.update(template='')
-            self.snapshot.update(is_built=False)
+                self.snapshot.update(user_data='')
+                self.snapshot.update(test_data=None)
+                self.snapshot.update(result='')
+                self.snapshot.update(template='')
+                self.snapshot.update(is_built=False)
 
-            self.test_data_btn_var.set('Test Data')
-            self.build_btn_var.set('Build')
-            self.template_name_var.set('')
-            self.search_chkbox_var.set(False)
-            # self.root.clipboard_clear()
-            self.set_title()
+                self.test_data_btn_var.set('Test Data')
+                self.build_btn_var.set('Build')
+                self.template_name_var.set('')
+                self.search_chkbox_var.set(False)
+                # self.root.clipboard_clear()
+                self.set_title()
 
         def callback_copy_text_btn():
             content = Application.get_textarea(self.result_textarea)
@@ -1180,7 +1199,7 @@ class Application:
                     self.store_btn.config(state=tk.NORMAL)
 
         def callback_app_backup_refresh_btn():
-            user_data = self.snapshot.switch_app_user_data
+            user_data = self.snapshot.switch_app_user_data      # noqa
             try:
                 kwargs = self.get_template_args()
                 factory = TemplateBuilder(user_data=user_data, **kwargs)
@@ -1192,7 +1211,6 @@ class Application:
         def callback_app_backup_save_btn():
             user_template = UserTemplate()
             tmpl_name = self.template_name_var.get()
-            template = user_template.search(tmpl_name)
             status = user_template.status
             is_invalid_format = status == 'INVALID-TEMPLATE-FORMAT'
             is_invalid_name = status == 'INVALID-TEMPLATE-NAME-FORMAT'
@@ -1218,7 +1236,8 @@ class Application:
         #         info="Robotframework button is available in Pro or Enterprise Edition."
         #     )
 
-        btn_width = 5.5 if self.is_macos else 8
+        # customize width for buttons
+        btn_width = 6 if self.is_macos else 8
         # open button
         open_file_btn = self.Button(
             self.entry_frame, text='Open',
@@ -1232,21 +1251,23 @@ class Application:
         self.save_as_btn = self.Button(
             self.entry_frame, text='Save As',
             name='main_save_as_btn',
+            state=tk.DISABLED,
             command=callback_save_as_btn,
             width=btn_width
         )
         self.save_as_btn.grid(row=0, column=1, pady=(2, 0))
-        self.save_as_btn.config(state=tk.DISABLED)
 
+        # customize width for buttons
+        btn_width = 5.5 if self.is_macos else 8
         # copy button
         self.copy_text_btn = self.Button(
             self.entry_frame, text='Copy',
             name='main_copy_btn',
+            state=tk.DISABLED,
             command=callback_copy_text_btn,
             width=btn_width
         )
         self.copy_text_btn.grid(row=0, column=2, pady=(2, 0))
-        self.copy_text_btn.config(state=tk.DISABLED)
 
         # paste button
         paste_text_btn = ttk.Button(
@@ -1307,37 +1328,41 @@ class Application:
         self.test_data_btn = self.Button(
             self.entry_frame,
             name='main_test_data_btn',
+            state=tk.DISABLED,
             command=callback_test_data_btn,
             textvariable=self.test_data_btn_var,
             width=btn_width
         )
         self.test_data_btn.grid(row=0, column=9, pady=(2, 0))
-        self.test_data_btn.config(state=tk.DISABLED)
 
+        # customize width for buttons
+        btn_width = 6 if self.is_macos else 8
         # result button
         self.result_btn = self.Button(
             self.entry_frame, text='Result',
             name='main_result_btn',
+            state=tk.DISABLED,
             command=callback_result_btn,
             width=btn_width
         )
         self.result_btn.grid(row=1, column=0, padx=(2, 0), pady=(0, 2))
-        self.result_btn.config(state=tk.DISABLED)
 
         # store button
         self.store_btn = self.Button(
             self.entry_frame, text='Store',
             name='main_store_btn',
+            state=tk.DISABLED,
             command=callback_store_btn,
             width=btn_width
         )
         self.store_btn.grid(row=1, column=1, pady=(0, 2))
-        self.store_btn.config(state=tk.DISABLED)
 
         # frame container for checkbox and textbox
         frame = self.Frame(self.entry_frame)
         frame.grid(row=1, column=2, pady=(0, 2), columnspan=8, sticky=tk.W)
 
+        # customize x padding for search checkbox
+        x = 0 if self.is_macos else 6 if self.is_linux else 2
         # search checkbox
         self.search_chkbox = self.CheckBox(
             frame, text='search',
@@ -1346,7 +1371,7 @@ class Application:
             onvalue=True, offvalue=False,
             command=callback_search_chkbox
         )
-        self.search_chkbox.grid(row=0, column=0, padx=4, sticky=tk.W)
+        self.search_chkbox.grid(row=0, column=0, padx=(0, x), sticky=tk.W)
 
         # template name textbox
         self.TextBox(
@@ -1424,7 +1449,7 @@ class Application:
         frame.grid(row=2, column=1, padx=(1, 2), pady=(0, 2), sticky=tk.W)
 
         # customize width for template name textbox
-        width = 70 if self.is_window else 50
+        width = 48 if self.is_macos else 50 if self.is_linux else 70
         self.TextBox(
             frame, width=width,
             textvariable=self.template_name_var
