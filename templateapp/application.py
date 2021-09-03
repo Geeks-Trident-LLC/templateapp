@@ -716,7 +716,7 @@ class Application:
         pady = 0 if self.is_macos else 1
 
         self.Label(
-            lframe_args, text='author'
+            lframe_args, text='Author'
         ).grid(row=0, column=0, columnspan=2, padx=2, pady=pady, sticky=tk.W+tk.N)
         self.TextBox(
             lframe_args, width=45,
@@ -724,7 +724,7 @@ class Application:
         ).grid(row=0, column=2, columnspan=4, padx=2, pady=pady, sticky=tk.W)
 
         self.Label(
-            lframe_args, text='email'
+            lframe_args, text='Email'
         ).grid(row=1, column=0, columnspan=2, padx=2, pady=pady, sticky=tk.W+tk.N)
         self.TextBox(
             lframe_args, width=45,
@@ -732,7 +732,7 @@ class Application:
         ).grid(row=1, column=2, columnspan=4, padx=2, pady=pady, sticky=tk.W)
 
         self.Label(
-            lframe_args, text='company'
+            lframe_args, text='Company'
         ).grid(row=2, column=0, columnspan=2, padx=2, pady=pady, sticky=tk.W+tk.N)
         self.TextBox(
             lframe_args, width=45,
@@ -740,7 +740,7 @@ class Application:
         ).grid(row=2, column=2, columnspan=4, padx=2, pady=pady, sticky=tk.W)
 
         self.Label(
-            lframe_args, text='filename'
+            lframe_args, text='Filename'
         ).grid(row=4, column=0, columnspan=2, padx=2, pady=pady, sticky=tk.W+tk.N)
         self.TextBox(
             lframe_args, width=45,
@@ -748,7 +748,7 @@ class Application:
         ).grid(row=4, column=2, columnspan=4, padx=2, pady=pady, sticky=tk.W)
 
         self.Label(
-            lframe_args, text='description'
+            lframe_args, text='Description'
         ).grid(row=5, column=0, columnspan=2, padx=2, pady=pady, sticky=tk.W+tk.N)
         self.TextBox(
             lframe_args, width=45,
