@@ -509,6 +509,7 @@ class Application:
     @classmethod
     def get_textarea(cls, widget):
         """Get data from TextArea widget
+
         Parameters
         ----------
         widget (tk.Text): a tk.Text widget
@@ -529,6 +530,7 @@ class Application:
 
     def set_textarea(self, widget, data, title=''):
         """set data for TextArea widget
+
         Parameters
         ----------
         widget (tk.Text): a tk.Text widget
@@ -537,9 +539,14 @@ class Application:
         """
         data, title = str(data), str(title).strip()
 
+        curr_state = widget['state']
+        widget.configure(state=tk.NORMAL)
+
         title and self.set_title(title=title)
         widget.delete("1.0", "end")
         widget.insert(tk.INSERT, data)
+
+        widget.configure(state=curr_state)
 
     def set_title(self, widget=None, title=''):
         """Set a new title for tkinter widget.
