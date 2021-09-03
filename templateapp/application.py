@@ -571,8 +571,10 @@ class Application:
 
     def callback_focus(self, event):    # noqa
         """Callback for widget selection"""
-        self.prev_widget = self.curr_widget
-        self.curr_widget = self.root.focus_get()
+        widget = self.root.focus_get()
+        if widget != self.curr_widget:
+            self.prev_widget = self.curr_widget
+            self.curr_widget = self.root.focus_get()
 
     def callback_file_exit(self):
         """Callback for Menu File > Exit."""
