@@ -1087,16 +1087,22 @@ class Application:
             if is_tmpl_name:
                 if self.prev_widget.selection_present():
                     content = self.prev_widget.selection_get()
+                    title = '<< Copied Selecting Text of Template Name >>'
                 else:
                     content = self.template_name_var.get()
+                    title = '<< Copied Template Name >>'
             elif is_input_area:
                 if self.prev_widget.tag_ranges(tk.SEL):
                     content = self.prev_widget.selection_get()
+                    title = '<< Copied Selecting Text of Input >>'
                 else:
                     content = Application.get_textarea(self.input_textarea)
+                    title = '<< Copied Input Text >>'
             else:
                 content = Application.get_textarea(self.result_textarea)
+                title = '<< Copied Output Text >>'
 
+            self.set_title(title=title)
             self.root.clipboard_clear()
             self.root.clipboard_append(content)
             self.root.update()
@@ -1120,7 +1126,7 @@ class Application:
                     self.prev_widget.insert(tk.INSERT, data)
                     self.prev_widget.selection_range(index, index + len(data))
                     self.prev_widget.focus()
-                    self.set_title(title='<<PASTE clipboard>>')
+                    self.set_title(title='<<PASTE clipboard - Template Name>>')
                 elif is_input_area and is_not_empty:
                     if self.prev_widget.tag_ranges(tk.SEL):
                         self.prev_widget.delete(tk.SEL_FIRST, tk.SEL_LAST)
@@ -1130,7 +1136,7 @@ class Application:
                         tk.SEL, index, '{}+{}c'.format(index, len(data))
                     )
                     self.prev_widget.focus()
-                    self.set_title(title='<<PASTE clipboard>>')
+                    self.set_title(title='<<PASTE clipboard - Input >>')
                 else:
                     self.clear_text_btn.invoke()
                     self.test_data_btn.config(state=tk.NORMAL)
