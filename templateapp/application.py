@@ -622,6 +622,7 @@ class Application:
                 self.set_textarea(self.result_textarea, '')
                 self.snapshot.update(test_data=content)
                 self.set_textarea(self.input_textarea, content, title=filename)
+                self.input_textarea.focus()
 
     def callback_help_documentation(self):
         """Callback for Menu Help > Getting Started."""
