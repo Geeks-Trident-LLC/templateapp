@@ -1048,6 +1048,7 @@ class Application:
                     self.prev_widget.delete(tk.SEL_FIRST, tk.SEL_LAST)
                 else:
                     self.template_name_var.set('')
+                self.prev_widget.focus()
             else:
                 if is_input_area and self.prev_widget.tag_ranges(tk.SEL):
                     self.prev_widget.delete(tk.SEL_FIRST, tk.SEL_LAST)
@@ -1072,6 +1073,7 @@ class Application:
                     self.search_chkbox_var.set(False)
                     # self.root.clipboard_clear()
                     self.set_title()
+                self.input_textarea.focus()
 
         def callback_copy_text_btn():
             prev_widget_name = str(self.prev_widget)
