@@ -1330,12 +1330,17 @@ class Application:
                 template = factory.template
                 fmt = '\n\n<<{}>>\n\n{{}}'.format('=' * 20)
 
+                lst = []
+
                 if self.template_chkbox_var.get() and template:
+                    lst.append('Template')
                     result += fmt.format(template) if result else template
 
                 if self.test_data_chkbox_var.get() and test_data:  # noqa
+                    lst.append('Test Data')
                     result += fmt.format(test_data) if result else test_data
 
+                lst.append('Test Result')
                 if rows and self.tabular_chkbox_var.get():
                     tabular_obj = Tabular(rows)
                     tabular_data = tabular_obj.get()
@@ -1346,7 +1351,9 @@ class Application:
 
                 self.test_data_btn_var.set('Test Data')
                 self.snapshot.update(result=result)
-                self.set_textarea(self.result_textarea, result)
+
+                title = 'Showing << {} >>'.format(' + '.join(lst))
+                self.set_textarea(self.result_textarea, result, title=title)
             except Exception as ex:
                 error = '{}: {}'.format(type(ex).__name__, ex)
                 create_msgbox(title='RegexBuilder Error', error=error)
