@@ -980,10 +980,18 @@ class Application:
 
         def callback_copy_text_btn():
             prev_widget_name = str(self.prev_widget)
-            if prev_widget_name.endswith('.main_template_name_textbox'):
-                content = self.template_name_var.get()
-            elif prev_widget_name.endswith('.main_input_textarea'):
-                content = Application.get_textarea(self.input_textarea)
+            is_tmpl_name = prev_widget_name.endswith('.main_template_name_textbox')
+            is_input_area = prev_widget_name.endswith('.main_input_textarea')
+            if is_tmpl_name:
+                if self.prev_widget.selection_present():
+                    content = self.prev_widget.selection_get()
+                else:
+                    content = self.template_name_var.get()
+            elif is_input_area:
+                if self.prev_widget.tag_ranges(tk.SEL):
+                    content = self.prev_widget.selection_get()
+                else:
+                    content = Application.get_textarea(self.input_textarea)
             else:
                 content = Application.get_textarea(self.result_textarea)
 
