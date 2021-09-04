@@ -596,10 +596,10 @@ class Application:
     def callback_focus(self, event):
         """Callback for widget selection"""
         try:
-            widget = self.root.focus_get()
-            if widget != self.curr_widget:
+            widget = event.widget
+            if widget and widget != self.curr_widget:
                 self.prev_widget = self.curr_widget
-                self.curr_widget = self.root.focus_get()
+                self.curr_widget = widget
         except Exception as ex:     # noqa
             print('... skip {}'.format(getattr(event, 'widget', event)))
 
