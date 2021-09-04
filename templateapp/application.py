@@ -626,7 +626,8 @@ class Application:
                 self.test_data_btn_var.set('Test Data')
                 self.set_textarea(self.result_textarea, '')
                 self.snapshot.update(test_data=content)
-                self.set_textarea(self.input_textarea, content, title=filename)
+                title = '<< Open {} + LOAD Test Data >>'.format(filename)
+                self.set_textarea(self.input_textarea, content, title=title)
                 self.input_textarea.focus()
 
     def callback_help_documentation(self):
