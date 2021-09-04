@@ -1006,7 +1006,7 @@ class Application:
                 if is_tmpl_name:
                     if self.prev_widget.selection_present():
                         self.prev_widget.delete(tk.SEL_FIRST, tk.SEL_LAST)
-                    self.prev_widget.insert(tkinter.INSERT, data)
+                    self.prev_widget.insert(tk.INSERT, data)
                 elif is_input_area and is_not_empty:
                     if self.prev_widget.tag_ranges(tk.SEL):
                         self.prev_widget.delete(tk.SEL_FIRST, tk.SEL_LAST)
