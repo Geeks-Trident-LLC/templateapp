@@ -612,7 +612,7 @@ class Application:
         """Callback for Menu File > Exit."""
         self.root.quit()
 
-    def callback_file_open(self):
+    def callback_open_file(self):
         """Callback for Menu File > Open."""
         filetypes = [
             ('Text Files', '.txt', 'TEXT'),
@@ -869,7 +869,7 @@ class Application:
         menu_bar.add_cascade(menu=preferences, label='Preferences')
         menu_bar.add_cascade(menu=help_, label='Help')
 
-        file.add_command(label='Open', command=lambda: self.callback_file_open())
+        file.add_command(label='Open', command=lambda: self.callback_open_file())
         file.add_separator()
         file.add_command(label='Quit', command=lambda: self.callback_file_exit())
 
@@ -1435,7 +1435,7 @@ class Application:
         self.open_file_btn = self.Button(
             self.entry_frame, text='Open',
             name='main_open_btn',
-            command=self.callback_file_open,
+            command=self.callback_open_file,
             width=btn_width
         )
         self.open_file_btn.grid(row=0, column=0, padx=(2, 0), pady=(2, 0))
