@@ -647,7 +647,7 @@ class Application:
 
         about = tk.Toplevel(self.root)
         self.set_title(widget=about, title='About')
-        width, height = 440, 460
+        width, height = 460, 460
         x, y = get_relative_center_location(self.root, width, height)
         about.geometry('{}x{}+{}+{}'.format(width, height, x, y))
         about.resizable(False, False)
@@ -659,7 +659,7 @@ class Application:
         paned_window.pack(fill=tk.BOTH, expand=True, padx=8, pady=12)
 
         # company
-        frame = self.Frame(paned_window, width=420, height=20)
+        frame = self.Frame(paned_window, width=450, height=20)
         paned_window.add(frame, weight=4)
 
         fmt = 'Templateapp v{} ({} Edition)'
@@ -667,7 +667,7 @@ class Application:
         company_lbl.grid(row=0, column=0, columnspan=2, sticky=tk.W)
 
         # URL
-        cell_frame = self.Frame(frame, width=420, height=5)
+        cell_frame = self.Frame(frame, width=450, height=5)
         cell_frame.grid(row=1, column=0, sticky=tk.W, columnspan=2)
 
         url = Data.repo_url
@@ -721,12 +721,12 @@ class Application:
 
         # license textbox
         lframe = self.LabelFrame(
-            paned_window, height=200, width=420,
+            paned_window, height=200, width=450,
             text=Data.license_name
         )
         paned_window.add(lframe, weight=7)
 
-        width = 55 if self.is_macos else 48
+        width = 58 if self.is_macos else 51
         height = 18 if self.is_macos else 14 if self.is_linux else 15
         txtbox = self.TextArea(lframe, width=width, height=height, wrap='word')
         txtbox.grid(row=0, column=0, padx=5, pady=5)
@@ -737,7 +737,7 @@ class Application:
         txtbox.config(state=tk.DISABLED)
 
         # footer - copyright
-        frame = self.Frame(paned_window, width=420, height=20)
+        frame = self.Frame(paned_window, width=450, height=20)
         paned_window.add(frame, weight=1)
 
         footer = self.Label(frame, text=Data.copyright_text)
