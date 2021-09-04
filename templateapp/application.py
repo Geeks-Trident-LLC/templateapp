@@ -26,6 +26,7 @@ from templateapp.core import save_file
 from templateapp import version
 from templateapp import edition
 
+
 __version__ = version
 __edition__ = edition
 
@@ -646,7 +647,7 @@ class Application:
 
         about = tk.Toplevel(self.root)
         self.set_title(widget=about, title='About')
-        width, height = 440, 400
+        width, height = 440, 460
         x, y = get_relative_center_location(self.root, width, height)
         about.geometry('{}x{}+{}+{}'.format(width, height, x, y))
         about.resizable(False, False)
@@ -659,23 +660,25 @@ class Application:
 
         # company
         frame = self.Frame(paned_window, width=420, height=20)
-        paned_window.add(frame, weight=1)
+        paned_window.add(frame, weight=4)
 
         fmt = 'Templateapp v{} ({} Edition)'
         company_lbl = self.Label(frame, text=fmt.format(version, edition))
-        company_lbl.pack(side=tk.LEFT)
+        company_lbl.grid(row=0, column=0, columnspan=2, sticky=tk.W)
 
         # URL
-        frame = self.Frame(paned_window, width=420, height=20)
-        paned_window.add(frame, weight=1)
+        cell_frame = self.Frame(frame, width=420, height=5)
+        cell_frame.grid(row=1, column=0, sticky=tk.W, columnspan=2)
 
         url = Data.repo_url
-        self.Label(frame, text='URL:').pack(side=tk.LEFT)
+        self.Label(cell_frame, text='URL:').pack(side=tk.LEFT)
         font_size = 12 if self.is_macos else 10
         style = ttk.Style()
         style.configure("Blue.TLabel", foreground="blue")
-        url_lbl = self.Label(frame, text=url, font=('sans-serif', font_size))
-        url_lbl.config(style='Blue.TLabel')
+        url_lbl = self.Label(
+            cell_frame, text=url, font=('sans-serif', font_size),
+            style='Blue.TLabel'
+        )
         url_lbl.default_font = ('sans-serif', font_size)
         url_lbl.pack(side=tk.LEFT)
         url_lbl.link = url
@@ -684,15 +687,47 @@ class Application:
         url_lbl.bind('<Leave>', mouse_out)
         url_lbl.bind('<Button-1>', mouse_press)
 
+        # dependencies
+        self.Label(
+            frame, text='Dependencies:'
+        ).grid(row=2, column=0, sticky=tk.W)
+
+        # regexapp package
+        import regexapp as rapp
+        text = 'Regexapp v{} ({} Edition)'.format(rapp.version, rapp.edition)
+        self.Label(
+            frame, text=text
+        ).grid(row=3, column=0, padx=(20, 0), sticky=tk.W)
+
+        # dlquery package
+        import dlquery as dlapp
+        text = 'DLQuery v{} ({} Edition)'.format(dlapp.version, dlapp.edition)
+        self.Label(
+            frame, text=text
+        ).grid(row=4, column=0, padx=(20, 0), pady=(0, 10), sticky=tk.W)
+
+        # textfsm package
+        import textfsm
+        text = 'TextFSM v{}'.format(textfsm.__version__)
+        self.Label(
+            frame, text=text
+        ).grid(row=3, column=1, padx=(20, 0), sticky=tk.W)
+
+        # PyYAML package
+        text = 'PyYAML v{}'.format(yaml.__version__)
+        self.Label(
+            frame, text=text
+        ).grid(row=4, column=1, padx=(20, 0), pady=(0, 10), sticky=tk.W)
+
         # license textbox
         lframe = self.LabelFrame(
-            paned_window, height=300, width=420,
+            paned_window, height=200, width=420,
             text=Data.license_name
         )
         paned_window.add(lframe, weight=7)
 
         width = 55 if self.is_macos else 48
-        height = 19 if self.is_macos else 15 if self.is_linux else 16
+        height = 18 if self.is_macos else 14 if self.is_linux else 15
         txtbox = self.TextArea(lframe, width=width, height=height, wrap='word')
         txtbox.grid(row=0, column=0, padx=5, pady=5)
         scrollbar = ttk.Scrollbar(lframe, orient=tk.VERTICAL, command=txtbox.yview)
@@ -702,11 +737,11 @@ class Application:
         txtbox.config(state=tk.DISABLED)
 
         # footer - copyright
-        frame = self.Frame(paned_window, width=380, height=20)
+        frame = self.Frame(paned_window, width=420, height=20)
         paned_window.add(frame, weight=1)
 
         footer = self.Label(frame, text=Data.copyright_text)
-        footer.pack(side=tk.LEFT)
+        footer.pack(side=tk.LEFT, pady=(10, 10))
 
         set_modal_dialog(about)
 
