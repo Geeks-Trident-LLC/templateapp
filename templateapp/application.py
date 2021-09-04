@@ -529,6 +529,19 @@ class Application:
         else:
             return text
 
+    @classmethod
+    def clear_textarea(cls, widget):
+        """clear data for TextArea widget
+
+        Parameters
+        ----------
+        widget (tk.Text): a tk.Text widget
+        """
+        curr_state = widget['state']
+        widget.configure(state=tk.NORMAL)
+        widget.delete("1.0", "end")
+        widget.configure(state=curr_state)
+
     def set_textarea(self, widget, data, title=''):
         """set data for TextArea widget
 
@@ -944,8 +957,8 @@ class Application:
                 w = 'Result window is READONLY text area.  CAN NOT clear.'
                 create_msgbox(title=title, warning=w)
             else:
-                self.input_textarea.delete("1.0", "end")
-                self.result_textarea.delete("1.0", "end")
+                Application.clear_textarea(self.input_textarea)
+                Application.clear_textarea(self.result_textarea)
                 self.save_as_btn.config(state=tk.DISABLED)
                 self.copy_text_btn.config(state=tk.DISABLED)
                 self.test_data_btn.config(state=tk.DISABLED)
