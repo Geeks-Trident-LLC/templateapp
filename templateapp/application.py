@@ -979,7 +979,14 @@ class Application:
                 self.set_title()
 
         def callback_copy_text_btn():
-            content = Application.get_textarea(self.result_textarea)
+            prev_widget_name = str(self.prev_widget)
+            if prev_widget_name.endswith('.main_template_name_textbox'):
+                content = self.template_name_var.get()
+            elif prev_widget_name.endswith('.main_input_textarea'):
+                content = Application.get_textarea(self.input_textarea)
+            else:
+                content = Application.get_textarea(self.result_textarea)
+
             self.root.clipboard_clear()
             self.root.clipboard_append(content)
             self.root.update()
