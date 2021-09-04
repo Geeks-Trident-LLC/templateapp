@@ -453,6 +453,7 @@ class Application:
 
         # datastore
         self.snapshot = Snapshot()
+        self.snapshot.update(title='')
         self.snapshot.update(user_data='')
         self.snapshot.update(test_data=None)
         self.snapshot.update(result='')
@@ -1281,12 +1282,16 @@ class Application:
             name = self.test_data_btn_var.get()
             if name == 'Test Data':
                 self.test_data_btn_var.set('Hide')
+                title = self.root.title().strip(self._base_title).strip('- ')
+                self.snapshot.update(title=title)
+                self.set_title(title='<< Showing Test Data >>')
                 self.set_textarea(
                     self.result_textarea,
                     self.snapshot.test_data  # noqa
                 )
             else:
                 self.test_data_btn_var.set('Test Data')
+                self.set_title(title=self.snapshot.title)
                 self.set_textarea(
                     self.result_textarea,
                     self.snapshot.result  # noqa
