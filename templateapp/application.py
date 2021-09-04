@@ -1051,12 +1051,16 @@ class Application:
             if is_tmpl_name:
                 if self.prev_widget.selection_present():
                     self.prev_widget.delete(tk.SEL_FIRST, tk.SEL_LAST)
+                    title = '<< Cleared Selecting Text - Template Name >>'
                 else:
                     self.template_name_var.set('')
+                    title = '<< Cleared Template Name >>'
+                self.set_title(title=title)
                 self.prev_widget.focus()
             else:
                 if is_input_area and self.prev_widget.tag_ranges(tk.SEL):
                     self.prev_widget.delete(tk.SEL_FIRST, tk.SEL_LAST)
+                    title = '<< Clearing Selecting Text - Input >>'
                 else:
                     Application.clear_textarea(self.input_textarea)
                     Application.clear_textarea(self.result_textarea)
@@ -1077,7 +1081,9 @@ class Application:
                     self.template_name_var.set('')
                     self.search_chkbox_var.set(False)
                     # self.root.clipboard_clear()
-                    self.set_title()
+                    title = '<< Cleared Input Text + Test Data >>'
+
+                self.set_title(title=title)
                 self.input_textarea.focus()
 
         def callback_copy_text_btn():
