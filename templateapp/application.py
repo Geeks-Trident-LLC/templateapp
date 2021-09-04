@@ -21,6 +21,7 @@ from pprint import pformat
 from dlquery.collection import Tabular
 
 from templateapp import TemplateBuilder
+from templateapp.core import save_file
 
 from templateapp import version
 from templateapp import edition
@@ -942,11 +943,65 @@ class Application:
                     create_msgbox(title=title, error=error)
 
         def callback_save_as_btn():
-            filename = filedialog.asksaveasfilename()
+            prev_widget_name = str(self.prev_widget)
+            is_input_area = prev_widget_name.endswith('.main_input_textarea')
+            widget = self.input_textarea if is_input_area else self.result_textarea
+            content = Application.get_textarea(widget)
+
+            is_mixed_result = '<<====================>>' in content
+            test_type = ''
+            is_unittest_or_pytest = False
+            extension = '.txt'
+            if is_input_area:
+                title = 'Saving Input Text'
+                filetypes = [('Text Files', '*.txt'), ('All Files', '*')]
+            else:
+                pattern1 = r'"+ *(?P<text>Python +(?P<test_type>\w+) +script) '
+                pattern2 = r'#+\s+# *Template +is +generated '
+                match = re.match(pattern1, content, re.I)
+                if match:
+                    title = 'Saving {}'.format(match.group('text')).title()
+                    test_type = match.group('test_type')
+                    is_unittest_or_pytest |= 'unittest' == test_type
+                    is_unittest_or_pytest |= 'pytest' == test_type
+                    filetypes = [('Python Files', '*.py'), ('All Files', '*')]
+                    extension = '.py'
+                elif re.match(pattern2, content, re.I) and not is_mixed_result:
+                    title = 'Saving TextFSM Template'
+                    filetypes = [('TextFSM Files', '*.textfsm'), ('All Files', '*')]
+                    extension = '.textfsm'
+                else:
+                    title = 'Saving Output Text'
+                    filetypes = [('Text Files', '*.txt'), ('All Files', '*')]
+
+            filename = filedialog.asksaveasfilename(title=title, filetypes=filetypes)
             if filename:
-                with open(filename, 'w') as stream:
-                    content = Application.get_textarea(self.result_textarea)
-                    stream.write(content)
+                node = PurePath(filename)
+                if not node.suffix:
+                    node = node.with_suffix(extension)
+
+                if is_unittest_or_pytest:
+                    name = node.name
+                    if not name.startswith('test_'):
+                        new_name = 'test_{}'.format(name)
+                        msg_title = 'Unittest/Pytest Naming Convention'
+                        yesnocancel = '\n'.join([
+                            ('{} - "{}" file does not begin '
+                             'with test_<filename>.'
+                             ).format(test_type.title(), name),
+                            'Yes: save as "{}" file name.'.format(new_name),
+                            'No: save as "{}" file name.'.format(name),
+                            'Cancel: do not save.',
+                            'Do you want to save?'
+                        ])
+                        response = create_msgbox(title=msg_title, yesnocancel=yesnocancel)
+                        if response is None:
+                            return
+                        else:
+                            if response:
+                                node = node.with_name(new_name)
+                filename = str(node)
+                save_file(filename, content)
 
         def callback_clear_text_btn():
             prev_widget_name = str(self.prev_widget)
