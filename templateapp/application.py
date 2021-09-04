@@ -432,8 +432,13 @@ class Application:
         self.input_textarea = None
         self.result_textarea = None
 
+        self.open_file_btn = None
+        self.clear_text_btn = None
+        self.paste_text_btn = None
         self.save_as_btn = None
         self.copy_text_btn = None
+
+        self.build_btn = None
         self.snippet_btn = None
         self.unittest_btn = None
         self.pytest_btn = None
@@ -1111,20 +1116,33 @@ class Application:
                 if is_tmpl_name:
                     if self.prev_widget.selection_present():
                         self.prev_widget.delete(tk.SEL_FIRST, tk.SEL_LAST)
+                    index = self.prev_widget.index(tk.INSERT)
                     self.prev_widget.insert(tk.INSERT, data)
+                    self.prev_widget.selection_range(index, index + len(data))
+                    self.prev_widget.focus()
+                    self.set_title(title='<<PASTE clipboard>>')
                 elif is_input_area and is_not_empty:
                     if self.prev_widget.tag_ranges(tk.SEL):
                         self.prev_widget.delete(tk.SEL_FIRST, tk.SEL_LAST)
+                    index = self.prev_widget.index(tk.INSERT)
                     self.prev_widget.insert(tk.INSERT, data)
+                    self.prev_widget.tag_add(
+                        tk.SEL, index, '{}+{}c'.format(index, len(data))
+                    )
+                    self.prev_widget.focus()
+                    self.set_title(title='<<PASTE clipboard>>')
                 else:
+                    self.clear_text_btn.invoke()
                     self.test_data_btn.config(state=tk.NORMAL)
                     self.test_data_btn_var.set('Test Data')
                     self.set_textarea(self.result_textarea, '')
                     self.snapshot.update(test_data=data)
                     self.snapshot.update(result='')
 
-                    title = '<<PASTE - Clipboard>>'
+                    title = '<<PASTE + LOAD Test Data>>'
                     self.set_textarea(self.input_textarea, data, title=title)
+                    self.input_textarea.focus()
+
             except Exception as ex:  # noqa
                 create_msgbox(
                     title='Empty Clipboard',
@@ -1402,13 +1420,13 @@ class Application:
         # customize width for buttons
         btn_width = 6 if self.is_macos else 8
         # open button
-        open_file_btn = self.Button(
+        self.open_file_btn = self.Button(
             self.entry_frame, text='Open',
             name='main_open_btn',
             command=self.callback_file_open,
             width=btn_width
         )
-        open_file_btn.grid(row=0, column=0, padx=(2, 0), pady=(2, 0))
+        self.open_file_btn.grid(row=0, column=0, padx=(2, 0), pady=(2, 0))
 
         # Save As button
         self.save_as_btn = self.Button(
@@ -1433,32 +1451,32 @@ class Application:
         self.copy_text_btn.grid(row=0, column=2, pady=(2, 0))
 
         # paste button
-        paste_text_btn = ttk.Button(
+        self.paste_text_btn = ttk.Button(
             self.entry_frame, text='Paste',
             name='main_paste_btn',
             command=callback_paste_text_btn,
             width=btn_width
         )
-        paste_text_btn.grid(row=0, column=3, pady=(2, 0))
+        self.paste_text_btn.grid(row=0, column=3, pady=(2, 0))
 
         # clear button
-        clear_text_btn = self.Button(
+        self.clear_text_btn = self.Button(
             self.entry_frame, text='Clear',
             name='main_clear_btn',
             command=callback_clear_text_btn,
             width=btn_width
         )
-        clear_text_btn.grid(row=0, column=4, pady=(2, 0))
+        self.clear_text_btn.grid(row=0, column=4, pady=(2, 0))
 
         # build button
-        build_btn = self.Button(
+        self.build_btn = self.Button(
             self.entry_frame,
             textvariable=self.build_btn_var,
             name='main_build_btn',
             command=callback_build_btn,
             width=btn_width
         )
-        build_btn.grid(row=0, column=5, pady=(2, 0))
+        self.build_btn.grid(row=0, column=5, pady=(2, 0))
 
         # snippet button
         self.snippet_btn = self.Button(
