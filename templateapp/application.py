@@ -21,6 +21,7 @@ from pprint import pformat
 from dlquery.collection import Tabular
 
 from templateapp import TemplateBuilder
+from templateapp.core import save_file
 
 from templateapp import version
 from templateapp import edition
@@ -442,7 +443,7 @@ class Application:
 
         self.curr_widget = None
         self.prev_widget = None
-        self.root.bind_all("<Button-1>", lambda e: self.callback_focus(e))
+        self.root.bind("<Button-1>", lambda e: self.callback_focus(e))
 
         # datastore
         self.snapshot = Snapshot()
@@ -529,6 +530,19 @@ class Application:
         else:
             return text
 
+    @classmethod
+    def clear_textarea(cls, widget):
+        """clear data for TextArea widget
+
+        Parameters
+        ----------
+        widget (tk.Text): a tk.Text widget
+        """
+        curr_state = widget['state']
+        widget.configure(state=tk.NORMAL)
+        widget.delete("1.0", "end")
+        widget.configure(state=curr_state)
+
     def set_textarea(self, widget, data, title=''):
         """set data for TextArea widget
 
@@ -578,12 +592,15 @@ class Application:
         self.paned_window.remove(self.entry_frame)
         self.paned_window.insert(1, self.backup_frame)
 
-    def callback_focus(self, event):    # noqa
+    def callback_focus(self, event):
         """Callback for widget selection"""
-        widget = self.root.focus_get()
-        if widget != self.curr_widget:
-            self.prev_widget = self.curr_widget
-            self.curr_widget = self.root.focus_get()
+        try:
+            widget = self.root.focus_get()
+            if widget != self.curr_widget:
+                self.prev_widget = self.curr_widget
+                self.curr_widget = self.root.focus_get()
+        except Exception as ex:     # noqa
+            print('... skip {}'.format(getattr(event, 'widget', event)))
 
     def callback_file_exit(self):
         """Callback for Menu File > Exit."""
@@ -926,62 +943,150 @@ class Application:
                     create_msgbox(title=title, error=error)
 
         def callback_save_as_btn():
-            filename = filedialog.asksaveasfilename()
+            prev_widget_name = str(self.prev_widget)
+            is_input_area = prev_widget_name.endswith('.main_input_textarea')
+            widget = self.input_textarea if is_input_area else self.result_textarea
+            content = Application.get_textarea(widget)
+
+            is_mixed_result = '<<====================>>' in content
+            test_type = ''
+            is_unittest_or_pytest = False
+            extension = '.txt'
+            if is_input_area:
+                title = 'Saving Input Text'
+                filetypes = [('Text Files', '*.txt'), ('All Files', '*')]
+            else:
+                pattern1 = r'"+ *(?P<text>Python +(?P<test_type>\w+) +script) '
+                pattern2 = r'#+\s+# *Template +is +generated '
+                match = re.match(pattern1, content, re.I)
+                if match:
+                    title = 'Saving {}'.format(match.group('text')).title()
+                    test_type = match.group('test_type')
+                    is_unittest_or_pytest |= 'unittest' == test_type
+                    is_unittest_or_pytest |= 'pytest' == test_type
+                    filetypes = [('Python Files', '*.py'), ('All Files', '*')]
+                    extension = '.py'
+                elif re.match(pattern2, content, re.I) and not is_mixed_result:
+                    title = 'Saving TextFSM Template'
+                    filetypes = [('TextFSM Files', '*.textfsm'), ('All Files', '*')]
+                    extension = '.textfsm'
+                else:
+                    title = 'Saving Output Text'
+                    filetypes = [('Text Files', '*.txt'), ('All Files', '*')]
+
+            filename = filedialog.asksaveasfilename(title=title, filetypes=filetypes)
             if filename:
-                with open(filename, 'w') as stream:
-                    content = Application.get_textarea(self.result_textarea)
-                    stream.write(content)
+                node = PurePath(filename)
+                if not node.suffix:
+                    node = node.with_suffix(extension)
+
+                if is_unittest_or_pytest:
+                    name = node.name
+                    if not name.startswith('test_'):
+                        new_name = 'test_{}'.format(name)
+                        msg_title = 'Unittest/Pytest Naming Convention'
+                        yesnocancel = '\n'.join([
+                            ('{} - "{}" file does not begin '
+                             'with test_<filename>.'
+                             ).format(test_type.title(), name),
+                            'Yes: save as "{}" file name.'.format(new_name),
+                            'No: save as "{}" file name.'.format(name),
+                            'Cancel: do not save.',
+                            'Do you want to save?'
+                        ])
+                        response = create_msgbox(title=msg_title, yesnocancel=yesnocancel)
+                        if response is None:
+                            return
+                        else:
+                            if response:
+                                node = node.with_name(new_name)
+                filename = str(node)
+                save_file(filename, content)
 
         def callback_clear_text_btn():
             prev_widget_name = str(self.prev_widget)
-            if prev_widget_name.endswith('.main_template_name_textbox'):
-                self.prev_widget.delete(0, tk.END)
-            elif prev_widget_name.endswith('.main_result_textarea'):
-                title = 'Readonly Window'
-                w = 'Result window is READONLY text area.  CAN NOT clear.'
-                create_msgbox(title=title, warning=w)
+            is_tmpl_name = prev_widget_name.endswith('.main_template_name_textbox')
+            is_input_area = prev_widget_name.endswith('.main_input_textarea')
+            if is_tmpl_name:
+                if self.prev_widget.selection_present():
+                    self.prev_widget.delete(tk.SEL_FIRST, tk.SEL_LAST)
+                else:
+                    self.template_name_var.set('')
             else:
-                self.input_textarea.delete("1.0", "end")
-                self.result_textarea.delete("1.0", "end")
-                self.save_as_btn.config(state=tk.DISABLED)
-                self.copy_text_btn.config(state=tk.DISABLED)
-                self.test_data_btn.config(state=tk.DISABLED)
-                self.result_btn.config(state=tk.DISABLED)
-                self.store_btn.config(state=tk.DISABLED)
+                if is_input_area and self.prev_widget.tag_ranges(tk.SEL):
+                    self.prev_widget.delete(tk.SEL_FIRST, tk.SEL_LAST)
+                else:
+                    Application.clear_textarea(self.input_textarea)
+                    Application.clear_textarea(self.result_textarea)
+                    self.save_as_btn.config(state=tk.DISABLED)
+                    self.copy_text_btn.config(state=tk.DISABLED)
+                    self.test_data_btn.config(state=tk.DISABLED)
+                    self.result_btn.config(state=tk.DISABLED)
+                    self.store_btn.config(state=tk.DISABLED)
 
-                self.snapshot.update(user_data='')
-                self.snapshot.update(test_data=None)
-                self.snapshot.update(result='')
-                self.snapshot.update(template='')
-                self.snapshot.update(is_built=False)
+                    self.snapshot.update(user_data='')
+                    self.snapshot.update(test_data=None)
+                    self.snapshot.update(result='')
+                    self.snapshot.update(template='')
+                    self.snapshot.update(is_built=False)
 
-                self.test_data_btn_var.set('Test Data')
-                self.build_btn_var.set('Build')
-                self.template_name_var.set('')
-                self.search_chkbox_var.set(False)
-                # self.root.clipboard_clear()
-                self.set_title()
+                    self.test_data_btn_var.set('Test Data')
+                    self.build_btn_var.set('Build')
+                    self.template_name_var.set('')
+                    self.search_chkbox_var.set(False)
+                    # self.root.clipboard_clear()
+                    self.set_title()
 
         def callback_copy_text_btn():
-            content = Application.get_textarea(self.result_textarea)
+            prev_widget_name = str(self.prev_widget)
+            is_tmpl_name = prev_widget_name.endswith('.main_template_name_textbox')
+            is_input_area = prev_widget_name.endswith('.main_input_textarea')
+            if is_tmpl_name:
+                if self.prev_widget.selection_present():
+                    content = self.prev_widget.selection_get()
+                else:
+                    content = self.template_name_var.get()
+            elif is_input_area:
+                if self.prev_widget.tag_ranges(tk.SEL):
+                    content = self.prev_widget.selection_get()
+                else:
+                    content = Application.get_textarea(self.input_textarea)
+            else:
+                content = Application.get_textarea(self.result_textarea)
+
             self.root.clipboard_clear()
             self.root.clipboard_append(content)
             self.root.update()
 
         def callback_paste_text_btn():
+            curr_data = Application.get_textarea(self.input_textarea)
+            prev_widget_name = str(self.prev_widget)
+
+            is_not_empty = len(curr_data.strip()) > 0
+            is_tmpl_name = prev_widget_name.endswith('.main_template_name_textbox')
+            is_input_area = prev_widget_name.endswith('.main_input_textarea')
             try:
                 data = self.root.clipboard_get()
                 if not data:
                     return
 
-                self.test_data_btn.config(state=tk.NORMAL)
-                self.test_data_btn_var.set('Test Data')
-                self.set_textarea(self.result_textarea, '')
-                self.snapshot.update(test_data=data)
-                self.snapshot.update(result='')
+                if is_tmpl_name:
+                    if self.prev_widget.selection_present():
+                        self.prev_widget.delete(tk.SEL_FIRST, tk.SEL_LAST)
+                    self.prev_widget.insert(tk.INSERT, data)
+                elif is_input_area and is_not_empty:
+                    if self.prev_widget.tag_ranges(tk.SEL):
+                        self.prev_widget.delete(tk.SEL_FIRST, tk.SEL_LAST)
+                    self.prev_widget.insert(tk.INSERT, data)
+                else:
+                    self.test_data_btn.config(state=tk.NORMAL)
+                    self.test_data_btn_var.set('Test Data')
+                    self.set_textarea(self.result_textarea, '')
+                    self.snapshot.update(test_data=data)
+                    self.snapshot.update(result='')
 
-                title = '<<PASTE - Clipboard>>'
-                self.set_textarea(self.input_textarea, data, title=title)
+                    title = '<<PASTE - Clipboard>>'
+                    self.set_textarea(self.input_textarea, data, title=title)
             except Exception as ex:  # noqa
                 create_msgbox(
                     title='Empty Clipboard',
