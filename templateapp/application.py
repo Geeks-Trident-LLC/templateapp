@@ -992,19 +992,34 @@ class Application:
             self.root.update()
 
         def callback_paste_text_btn():
+            curr_data = Application.get_textarea(self.input_textarea)
+            prev_widget_name = str(self.prev_widget)
+
+            is_not_empty = len(curr_data.strip()) > 0
+            is_tmpl_name = prev_widget_name.endswith('.main_template_name_textbox')
+            is_input_area = prev_widget_name.endswith('.main_input_textarea')
             try:
                 data = self.root.clipboard_get()
                 if not data:
                     return
 
-                self.test_data_btn.config(state=tk.NORMAL)
-                self.test_data_btn_var.set('Test Data')
-                self.set_textarea(self.result_textarea, '')
-                self.snapshot.update(test_data=data)
-                self.snapshot.update(result='')
+                if is_tmpl_name:
+                    if self.prev_widget.selection_present():
+                        self.prev_widget.delete(tk.SEL_FIRST, tk.SEL_LAST)
+                    self.prev_widget.insert(tkinter.INSERT, data)
+                elif is_input_area and is_not_empty:
+                    if self.prev_widget.tag_ranges(tk.SEL):
+                        self.prev_widget.delete(tk.SEL_FIRST, tk.SEL_LAST)
+                    self.prev_widget.insert(tk.INSERT, data)
+                else:
+                    self.test_data_btn.config(state=tk.NORMAL)
+                    self.test_data_btn_var.set('Test Data')
+                    self.set_textarea(self.result_textarea, '')
+                    self.snapshot.update(test_data=data)
+                    self.snapshot.update(result='')
 
-                title = '<<PASTE - Clipboard>>'
-                self.set_textarea(self.input_textarea, data, title=title)
+                    title = '<<PASTE - Clipboard>>'
+                    self.set_textarea(self.input_textarea, data, title=title)
             except Exception as ex:  # noqa
                 create_msgbox(
                     title='Empty Clipboard',
