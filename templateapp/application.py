@@ -1260,7 +1260,8 @@ class Application:
                     **kwargs
                 )
                 script = factory.create_pytest()
-                self.set_textarea(self.result_textarea, script)
+                title = '<< Python Pytest Script >>'
+                self.set_textarea(self.result_textarea, script, title=title)
                 self.test_data_btn_var.set('Test Data')
                 self.snapshot.update(result=script)
                 self.save_as_btn.config(state=tk.NORMAL)
