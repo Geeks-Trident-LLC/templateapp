@@ -598,7 +598,7 @@ class Application:
         self.paned_window.remove(self.backup_frame)
         self.paned_window.insert(1, self.entry_frame)
 
-        stored_title = self.root.title().strip(' - ' + self._base_title)
+        stored_title = self.root.title().replace(' - ' + self._base_title, '')
         self.snapshot.update(stored_title=stored_title)
         self.set_title(title=self.snapshot.title)
 
@@ -607,7 +607,7 @@ class Application:
         self.paned_window.remove(self.entry_frame)
         self.paned_window.insert(1, self.backup_frame)
 
-        title = self.root.title().strip(' - ' + self._base_title)
+        title = self.root.title().replace(' - ' + self._base_title, '')
         self.snapshot.update(title=title)
         stored_title = self.snapshot.stored_title or 'Storing Template'
         self.set_title(title=stored_title)
@@ -1316,7 +1316,7 @@ class Application:
             name = self.test_data_btn_var.get()
             if name == 'Test Data':
                 self.test_data_btn_var.set('Hide')
-                title = self.root.title().strip(self._base_title).strip('- ')
+                title = self.root.title().replace(' - ' + self._base_title, '')
                 self.snapshot.update(title=title)
                 self.set_title(title='Showing Test Data')
                 self.set_textarea(
@@ -1341,58 +1341,64 @@ class Application:
                 )
                 return
 
-            user_data = Application.get_textarea(self.input_textarea)
-            if not user_data:
-                create_msgbox(
-                    title='Empty Data',
-                    error="Can NOT build regex pattern without data."
-                )
-                return
+            if self.build_btn_var.get() == 'Search':
+                template = self.snapshot.template   # noqa
 
-            try:
-                kwargs = self.get_template_args()
-                factory = TemplateBuilder(user_data=user_data, **kwargs)
-                self.snapshot.update(user_data=user_data)
-                self.snapshot.update(template=factory.template)
-                self.snapshot.update(is_built=True)
-                stream = StringIO(factory.template)  # noqa
-                parser = TextFSM(stream)
-                rows = parser.ParseTextToDicts(self.snapshot.test_data)  # noqa
+            if self.build_btn_var.get() == 'Build':
+                user_data = Application.get_textarea(self.input_textarea)
+                if not user_data:
+                    create_msgbox(
+                        title='Empty Data',
+                        error="Can NOT build regex pattern without data."
+                    )
+                    return
 
-                result = ''
-                test_data = self.snapshot.test_data  # noqa
-                template = factory.template
-                fmt = '\n\n<<{}>>\n\n{{}}'.format('=' * 20)
+                try:
+                    kwargs = self.get_template_args()
+                    factory = TemplateBuilder(user_data=user_data, **kwargs)
+                    self.snapshot.update(user_data=user_data)
+                    self.snapshot.update(template=factory.template)
+                    self.snapshot.update(is_built=True)
+                    template = factory.template
+                except Exception as ex:
+                    error = '{}: {}'.format(type(ex).__name__, ex)
+                    create_msgbox(title='RegexBuilder Error', error=error)
+                    return
 
-                lst = []
+            stream = StringIO(template)
+            parser = TextFSM(stream)
+            rows = parser.ParseTextToDicts(self.snapshot.test_data)  # noqa
 
-                if self.template_chkbox_var.get() and template:
-                    lst.append('Template')
-                    result += fmt.format(template) if result else template
+            result = ''
+            test_data = self.snapshot.test_data  # noqa
+            fmt = '\n\n<<{}>>\n\n{{}}'.format('=' * 20)
 
-                if self.test_data_chkbox_var.get() and test_data:  # noqa
-                    lst.append('Test Data')
-                    result += fmt.format(test_data) if result else test_data
+            lst = []
 
-                lst.append('Test Result')
-                if rows and self.tabular_chkbox_var.get():
-                    tabular_obj = Tabular(rows)
-                    tabular_data = tabular_obj.get()
-                    result += fmt.format(tabular_data) if result else tabular_data
-                else:
-                    pretty_data = pformat(rows)
-                    result += fmt.format(pretty_data) if result else pretty_data
+            if self.template_chkbox_var.get() and template:
+                lst.append('Template')
+                result += fmt.format(template) if result else template
 
-                self.test_data_btn_var.set('Test Data')
-                self.snapshot.update(result=result)
+            if self.test_data_chkbox_var.get() and test_data:  # noqa
+                lst.append('Test Data')
+                result += fmt.format(test_data) if result else test_data
 
-                title = 'Showing {}'.format(' + '.join(lst))
-                self.snapshot.update(title=title)
-                self.set_title(title=title)
-                self.set_textarea(self.result_textarea, result)
-            except Exception as ex:
-                error = '{}: {}'.format(type(ex).__name__, ex)
-                create_msgbox(title='RegexBuilder Error', error=error)
+            lst.append('Test Result')
+            if rows and self.tabular_chkbox_var.get():
+                tabular_obj = Tabular(rows)
+                tabular_data = tabular_obj.get()
+                result += fmt.format(tabular_data) if result else tabular_data
+            else:
+                pretty_data = pformat(rows)
+                result += fmt.format(pretty_data) if result else pretty_data
+
+            self.test_data_btn_var.set('Test Data')
+            self.snapshot.update(result=result)
+
+            title = 'Showing {}'.format(' + '.join(lst))
+            self.snapshot.update(title=title)
+            self.set_title(title=title)
+            self.set_textarea(self.result_textarea, result)
 
         def callback_store_btn():
             user_template = UserTemplate()
@@ -1435,7 +1441,7 @@ class Application:
                 self.pytest_btn.configure(state=tk.DISABLED)
                 self.store_btn.configure(state=tk.DISABLED)
 
-                title = self.root.title().strip(' - {}'.format(self._base_title))
+                title = self.root.title().replace(' - ' + self._base_title, '')
                 self.snapshot.update(title=title)
                 self.set_title(title='Searching Template')
             else:
