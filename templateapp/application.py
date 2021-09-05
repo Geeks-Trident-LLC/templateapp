@@ -454,6 +454,7 @@ class Application:
         # datastore
         self.snapshot = Snapshot()
         self.snapshot.update(title='')
+        self.snapshot.update(stored_title='')
         self.snapshot.update(user_data='')
         self.snapshot.update(test_data=None)
         self.snapshot.update(result='')
@@ -598,6 +599,11 @@ class Application:
         """Switch from main app to backup app"""
         self.paned_window.remove(self.entry_frame)
         self.paned_window.insert(1, self.backup_frame)
+
+        title = self.root.title().strip(' - ' + self._base_title)
+        self.snapshot.update(title=title)
+        stored_title = self.snapshot.stored_title or '<< Storing Template >>'
+        self.set_title(title=stored_title)
 
     def callback_focus(self, event):
         """Callback for widget selection"""
