@@ -969,6 +969,10 @@ class Application:
                     self.save_as_btn.config(state=tk.NORMAL)
                     self.copy_text_btn.config(state=tk.NORMAL)
                     self.set_textarea(self.result_textarea, factory.template)
+
+                    title = 'Building Template'
+                    self.snapshot.update(title=title)
+                    self.set_title(title=title)
                 except Exception as ex:
                     error = '{}: {}'.format(type(ex).__name__, ex)
                     create_msgbox(title='RegexBuilder Error', error=error)
@@ -993,6 +997,10 @@ class Application:
                     else:
                         self.snapshot.update(result=user_template.status)
                         self.set_textarea(self.result_textarea, user_template.status)
+
+                    title = 'Searching Template'
+                    self.snapshot.update(title=title)
+                    self.set_title(title=title)
                 else:
                     title = 'Empty Template Name'
                     error = 'CANT retrieve template with empty template name.'
@@ -1414,7 +1422,7 @@ class Application:
 
                 title = self.root.title().strip(' - {}'.format(self._base_title))
                 self.snapshot.update(title=title)
-                self.set_title(title='<< Searching Template >>')
+                self.set_title(title='Searching Template')
             else:
                 self.build_btn_var.set('Build')
                 self.snippet_btn.configure(state=tk.NORMAL)
@@ -1422,7 +1430,10 @@ class Application:
                 self.pytest_btn.configure(state=tk.NORMAL)
                 self.store_btn.configure(state=tk.NORMAL)
 
-                self.set_title(title=self.snapshot.title)
+                title_ = self.snapshot.title
+                title = title_ if title_ != 'Searching Template' else ''
+                self.snapshot.update(title=title)
+                self.set_title(title=title)
 
         def callback_app_backup_refresh_btn():
             user_data = self.snapshot.switch_app_user_data      # noqa
