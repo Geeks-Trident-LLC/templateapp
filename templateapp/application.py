@@ -1422,10 +1422,15 @@ class Application:
         def callback_app_backup_refresh_btn():
             user_data = self.snapshot.switch_app_user_data      # noqa
             try:
+                curr_template = Application.get_textarea(self.input_textarea).strip()
                 kwargs = self.get_template_args()
                 factory = TemplateBuilder(user_data=user_data, **kwargs)
                 self.snapshot.update(switch_app_template=factory.template)
                 self.set_textarea(self.input_textarea, factory.template)
+                if curr_template != factory.template.strip():
+                    title = '<< Template Is Refreshed >>'
+                    self.snapshot.update(stored_title=title)
+                    self.set_title(title=title)
             except Exception as ex:
                 error = '{}: {}'.format(type(ex).__name__, ex)
                 create_msgbox(title='RegexBuilder Error', error=error)
