@@ -325,74 +325,77 @@ class UserTemplate:
         bool: True if success written, otherwise False.
         """
         self.status = ''
-        if self.is_exist():
-            self.search(template_name)
-            if self.status == 'FOUND' or self.status == 'NOT_FOUND':
-                content = self.read()
-                yaml_obj = yaml.load(content, Loader=yaml.SafeLoader)
-                yaml_obj = yaml_obj or dict()
-                if template_name in yaml_obj:
-                    title = 'Duplicate Template Name'
-                    fmt = ('{!r} template name is already existed.\n'
-                           'Do you want to overwrite?')
-                    question = fmt.format(template_name)
-                    response = create_msgbox(title=title, question=question)
-                    if response == 'yes':
-                        yaml_obj[template_name] = template
-                        for name, tmpl in yaml_obj.items():
-                            if tmpl.strip() == template.strip() and name != template_name:
-                                title = 'Duplicate Template Name And Content'
-                                fmt = ('{!r} template name is a duplicate name and '
-                                       'duplicate content with other {!r}.\n  '
-                                       'CANT NOT overwrite')
-                                error = fmt.format(template_name, name)
-                                create_msgbox(title=title, error=error)
-                                self.status = 'DUPLICATE-NAME-AND-CONTENT-VIOLATION'
-                                return False
-                    else:
-                        self.status = 'DENIED-OVERWRITE'
-                        return False
-                else:
-                    removed_lst = []
-                    for name, tmpl in yaml_obj.items():
-                        if tmpl.strip() == template.strip():
-                            title = 'Duplicate Template Content'
-                            fmt = ('{!r} template name (i.e. your template) has a '
-                                   'same content with {!r}.\n  Do you want to rename?')
-                            question = fmt.format(template_name, name)
-                            response = create_msgbox(title=title, question=question)
-                            if response == 'yes':
-                                removed_lst.append(name)
-                            else:
-                                self.status = 'DENIED-RENAME'
-                                return False
+        if not self.is_exist():
+            self.status = 'USER_TEMPLATE_NOT_EXISTED'
+            return False
 
-                    for name in removed_lst:
-                        yaml_obj.pop(name)
-
+        self.search(template_name)
+        if self.status == 'FOUND' or self.status == 'NOT_FOUND':
+            content = self.read()
+            yaml_obj = yaml.load(content, Loader=yaml.SafeLoader)
+            yaml_obj = yaml_obj or dict()
+            if template_name in yaml_obj:
+                title = 'Duplicate Template Name'
+                fmt = ('{!r} template name is already existed.\n'
+                       'Do you want to overwrite?')
+                question = fmt.format(template_name)
+                response = create_msgbox(title=title, question=question)
+                if response == 'yes':
                     yaml_obj[template_name] = template
-
-                lst = []
-
-                for name in sorted(yaml_obj.keys()):
-                    tmpl = yaml_obj.get(name)
-                    data = '{}: |-\n{}'.format(name, indent(tmpl, '  '))
-                    lst.append(data)
-
-                try:
-                    with open(self.filename, 'w') as stream:
-                        content = '\n\n'.join(lst)
-                        stream.write(content)
-                        self.content = content
-                        return True
-                except Exception as ex:
-                    title = 'Writing User Template File Error'
-                    error = "{}: {}.".format(type(ex).__name__, ex)
-                    self.status = error
-                    create_msgbox(title=title, error=error)
+                    for name, tmpl in yaml_obj.items():
+                        if tmpl.strip() == template.strip() and name != template_name:
+                            title = 'Duplicate Template Name And Content'
+                            fmt = ('{!r} template name is a duplicate name and '
+                                   'duplicate content with other {!r}.\n  '
+                                   'CANT NOT overwrite')
+                            error = fmt.format(template_name, name)
+                            create_msgbox(title=title, error=error)
+                            self.status = 'DUPLICATE-NAME-AND-CONTENT-VIOLATION'
+                            return False
+                else:
+                    self.status = 'DENIED-OVERWRITE'
                     return False
             else:
+                removed_lst = []
+                for name, tmpl in yaml_obj.items():
+                    if tmpl.strip() == template.strip():
+                        title = 'Duplicate Template Content'
+                        fmt = ('{!r} template name (i.e. your template) has a '
+                               'same content with {!r}.\n  Do you want to rename?')
+                        question = fmt.format(template_name, name)
+                        response = create_msgbox(title=title, question=question)
+                        if response == 'yes':
+                            removed_lst.append(name)
+                        else:
+                            self.status = 'DENIED-RENAME'
+                            return False
+
+                for name in removed_lst:
+                    yaml_obj.pop(name)
+
+                yaml_obj[template_name] = template
+
+            lst = []
+
+            for name in sorted(yaml_obj.keys()):
+                tmpl = yaml_obj.get(name)
+                data = '{}: |-\n{}'.format(name, indent(tmpl, '  '))
+                lst.append(data)
+
+            try:
+                with open(self.filename, 'w') as stream:
+                    content = '\n\n'.join(lst)
+                    stream.write(content)
+                    self.content = content
+                    return True
+            except Exception as ex:
+                title = 'Writing User Template File Error'
+                error = "{}: {}.".format(type(ex).__name__, ex)
+                self.status = error
+                create_msgbox(title=title, error=error)
                 return False
+        else:
+            return False
 
 
 class Application:
