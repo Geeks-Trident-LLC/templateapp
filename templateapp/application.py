@@ -1411,13 +1411,18 @@ class Application:
                 self.unittest_btn.configure(state=tk.DISABLED)
                 self.pytest_btn.configure(state=tk.DISABLED)
                 self.store_btn.configure(state=tk.DISABLED)
+
+                title = self.root.title().strip(' - {}'.format(self._base_title))
+                self.snapshot.update(title=title)
+                self.set_title(title='<< Searching Template >>')
             else:
                 self.build_btn_var.set('Build')
-                if self.snapshot.is_built:  # noqa
-                    self.snippet_btn.configure(state=tk.NORMAL)
-                    self.unittest_btn.configure(state=tk.NORMAL)
-                    self.pytest_btn.configure(state=tk.NORMAL)
-                    self.store_btn.configure(state=tk.NORMAL)
+                self.snippet_btn.configure(state=tk.NORMAL)
+                self.unittest_btn.configure(state=tk.NORMAL)
+                self.pytest_btn.configure(state=tk.NORMAL)
+                self.store_btn.configure(state=tk.NORMAL)
+
+                self.set_title(title=self.snapshot.title)
 
         def callback_app_backup_refresh_btn():
             user_data = self.snapshot.switch_app_user_data      # noqa
