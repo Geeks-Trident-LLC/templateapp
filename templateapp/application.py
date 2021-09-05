@@ -1448,9 +1448,13 @@ class Application:
                 return
 
             user_data = self.get_textarea(self.input_textarea)
-            user_template.write(tmpl_name, user_data.strip())
+            is_saved = user_template.write(tmpl_name, user_data.strip())
 
-            self.set_textarea(self.result_textarea, user_template.read())
+            if is_saved:
+                self.set_textarea(self.result_textarea, user_template.read())
+                title = '<< {} Is Saved >>'.format(tmpl_name)
+                self.snapshot.update(stored_title=title)
+                self.set_title(title=title)
 
         # def callback_rf_btn():
         #     create_msgbox(
