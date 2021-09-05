@@ -421,7 +421,7 @@ class Application:
 
         self._base_title = 'TemplateApp {}'.format(edition)
         self.root = tk.Tk()
-        self.root.geometry('800x600+100+100')
+        self.root.geometry('900x600+100+100')
         self.root.minsize(200, 200)
         self.root.option_add('*tearOff', False)
 
@@ -1452,9 +1452,12 @@ class Application:
                 self.store_btn.configure(state=tk.NORMAL)
 
                 title_ = self.snapshot.title
-                title = title_ if title_ != 'Searching Template' else ''
+                if title_ != 'Searching Template' or title_ != self._base_title:
+                    title = title_
+                else:
+                    title = ''
                 self.snapshot.update(title=title)
-                self.set_title(title=title)
+                self.set_title(title=title) if title else self.set_title()
 
         def callback_app_backup_refresh_btn():
             user_data = self.snapshot.switch_app_user_data      # noqa
@@ -1525,8 +1528,6 @@ class Application:
         )
         self.save_as_btn.grid(row=0, column=1, pady=(2, 0))
 
-        # customize width for buttons
-        btn_width = 5.5 if self.is_macos else 8
         # copy button
         self.copy_text_btn = self.Button(
             self.entry_frame, text='Copy',
@@ -1603,8 +1604,6 @@ class Application:
         )
         self.test_data_btn.grid(row=0, column=9, pady=(2, 0))
 
-        # customize width for buttons
-        btn_width = 6 if self.is_macos else 8
         # result button
         self.result_btn = self.Button(
             self.entry_frame, text='Result',
