@@ -325,74 +325,77 @@ class UserTemplate:
         bool: True if success written, otherwise False.
         """
         self.status = ''
-        if self.is_exist():
-            self.search(template_name)
-            if self.status == 'FOUND' or self.status == 'NOT_FOUND':
-                content = self.read()
-                yaml_obj = yaml.load(content, Loader=yaml.SafeLoader)
-                yaml_obj = yaml_obj or dict()
-                if template_name in yaml_obj:
-                    title = 'Duplicate Template Name'
-                    fmt = ('{!r} template name is already existed.\n'
-                           'Do you want to overwrite?')
-                    question = fmt.format(template_name)
-                    response = create_msgbox(title=title, question=question)
-                    if response == 'yes':
-                        yaml_obj[template_name] = template
-                        for name, tmpl in yaml_obj.items():
-                            if tmpl.strip() == template.strip() and name != template_name:
-                                title = 'Duplicate Template Name And Content'
-                                fmt = ('{!r} template name is a duplicate name and '
-                                       'duplicate content with other {!r}.\n  '
-                                       'CANT NOT overwrite')
-                                error = fmt.format(template_name, name)
-                                create_msgbox(title=title, error=error)
-                                self.status = 'DUPLICATE-NAME-AND-CONTENT-VIOLATION'
-                                return False
-                    else:
-                        self.status = 'DENIED-OVERWRITE'
-                        return False
-                else:
-                    removed_lst = []
-                    for name, tmpl in yaml_obj.items():
-                        if tmpl.strip() == template.strip():
-                            title = 'Duplicate Template Content'
-                            fmt = ('{!r} template name (i.e. your template) has a '
-                                   'same content with {!r}.\n  Do you want to rename?')
-                            question = fmt.format(template_name, name)
-                            response = create_msgbox(title=title, question=question)
-                            if response == 'yes':
-                                removed_lst.append(name)
-                            else:
-                                self.status = 'DENIED-RENAME'
-                                return False
+        if not self.is_exist():
+            self.status = 'USER_TEMPLATE_NOT_EXISTED'
+            return False
 
-                    for name in removed_lst:
-                        yaml_obj.pop(name)
-
+        self.search(template_name)
+        if self.status == 'FOUND' or self.status == 'NOT_FOUND':
+            content = self.read()
+            yaml_obj = yaml.load(content, Loader=yaml.SafeLoader)
+            yaml_obj = yaml_obj or dict()
+            if template_name in yaml_obj:
+                title = 'Duplicate Template Name'
+                fmt = ('{!r} template name is already existed.\n'
+                       'Do you want to overwrite?')
+                question = fmt.format(template_name)
+                response = create_msgbox(title=title, question=question)
+                if response == 'yes':
                     yaml_obj[template_name] = template
-
-                lst = []
-
-                for name in sorted(yaml_obj.keys()):
-                    tmpl = yaml_obj.get(name)
-                    data = '{}: |-\n{}'.format(name, indent(tmpl, '  '))
-                    lst.append(data)
-
-                try:
-                    with open(self.filename, 'w') as stream:
-                        content = '\n\n'.join(lst)
-                        stream.write(content)
-                        self.content = content
-                        return True
-                except Exception as ex:
-                    title = 'Writing User Template File Error'
-                    error = "{}: {}.".format(type(ex).__name__, ex)
-                    self.status = error
-                    create_msgbox(title=title, error=error)
+                    for name, tmpl in yaml_obj.items():
+                        if tmpl.strip() == template.strip() and name != template_name:
+                            title = 'Duplicate Template Name And Content'
+                            fmt = ('{!r} template name is a duplicate name and '
+                                   'duplicate content with other {!r}.\n  '
+                                   'CANT NOT overwrite')
+                            error = fmt.format(template_name, name)
+                            create_msgbox(title=title, error=error)
+                            self.status = 'DUPLICATE-NAME-AND-CONTENT-VIOLATION'
+                            return False
+                else:
+                    self.status = 'DENIED-OVERWRITE'
                     return False
             else:
+                removed_lst = []
+                for name, tmpl in yaml_obj.items():
+                    if tmpl.strip() == template.strip():
+                        title = 'Duplicate Template Content'
+                        fmt = ('{!r} template name (i.e. your template) has a '
+                               'same content with {!r}.\n  Do you want to rename?')
+                        question = fmt.format(template_name, name)
+                        response = create_msgbox(title=title, question=question)
+                        if response == 'yes':
+                            removed_lst.append(name)
+                        else:
+                            self.status = 'DENIED-RENAME'
+                            return False
+
+                for name in removed_lst:
+                    yaml_obj.pop(name)
+
+                yaml_obj[template_name] = template
+
+            lst = []
+
+            for name in sorted(yaml_obj.keys()):
+                tmpl = yaml_obj.get(name)
+                data = '{}: |-\n{}'.format(name, indent(tmpl, '  '))
+                lst.append(data)
+
+            try:
+                with open(self.filename, 'w') as stream:
+                    content = '\n\n'.join(lst)
+                    stream.write(content)
+                    self.content = content
+                    return True
+            except Exception as ex:
+                title = 'Writing User Template File Error'
+                error = "{}: {}.".format(type(ex).__name__, ex)
+                self.status = error
+                create_msgbox(title=title, error=error)
                 return False
+        else:
+            return False
 
 
 class Application:
@@ -432,8 +435,13 @@ class Application:
         self.input_textarea = None
         self.result_textarea = None
 
+        self.open_file_btn = None
+        self.clear_text_btn = None
+        self.paste_text_btn = None
         self.save_as_btn = None
         self.copy_text_btn = None
+
+        self.build_btn = None
         self.snippet_btn = None
         self.unittest_btn = None
         self.pytest_btn = None
@@ -448,6 +456,8 @@ class Application:
 
         # datastore
         self.snapshot = Snapshot()
+        self.snapshot.update(title='')
+        self.snapshot.update(stored_title='')
         self.snapshot.update(user_data='')
         self.snapshot.update(test_data=None)
         self.snapshot.update(result='')
@@ -588,18 +598,27 @@ class Application:
         self.paned_window.remove(self.backup_frame)
         self.paned_window.insert(1, self.entry_frame)
 
+        stored_title = self.root.title().replace(' - ' + self._base_title, '')
+        self.snapshot.update(stored_title=stored_title)
+        self.set_title(title=self.snapshot.title)
+
     def shift_to_backup_app(self):
         """Switch from main app to backup app"""
         self.paned_window.remove(self.entry_frame)
         self.paned_window.insert(1, self.backup_frame)
 
+        title = self.root.title().replace(' - ' + self._base_title, '')
+        self.snapshot.update(title=title)
+        stored_title = self.snapshot.stored_title or 'Storing Template'
+        self.set_title(title=stored_title)
+
     def callback_focus(self, event):
         """Callback for widget selection"""
         try:
-            widget = self.root.focus_get()
-            if widget != self.curr_widget:
+            widget = event.widget
+            if widget and widget != self.curr_widget:
                 self.prev_widget = self.curr_widget
-                self.curr_widget = self.root.focus_get()
+                self.curr_widget = widget
         except Exception as ex:     # noqa
             print('... skip {}'.format(getattr(event, 'widget', event)))
 
@@ -607,7 +626,7 @@ class Application:
         """Callback for Menu File > Exit."""
         self.root.quit()
 
-    def callback_file_open(self):
+    def callback_open_file(self):
         """Callback for Menu File > Open."""
         filetypes = [
             ('Text Files', '.txt', 'TEXT'),
@@ -621,7 +640,9 @@ class Application:
                 self.test_data_btn_var.set('Test Data')
                 self.set_textarea(self.result_textarea, '')
                 self.snapshot.update(test_data=content)
-                self.set_textarea(self.input_textarea, content, title=filename)
+                title = 'Open {} + LOAD Test Data'.format(filename)
+                self.set_textarea(self.input_textarea, content, title=title)
+                self.input_textarea.focus()
 
     def callback_help_documentation(self):
         """Callback for Menu Help > Getting Started."""
@@ -863,7 +884,7 @@ class Application:
         menu_bar.add_cascade(menu=preferences, label='Preferences')
         menu_bar.add_cascade(menu=help_, label='Help')
 
-        file.add_command(label='Open', command=lambda: self.callback_file_open())
+        file.add_command(label='Open', command=lambda: self.callback_open_file())
         file.add_separator()
         file.add_command(label='Quit', command=lambda: self.callback_file_exit())
 
@@ -948,6 +969,10 @@ class Application:
                     self.save_as_btn.config(state=tk.NORMAL)
                     self.copy_text_btn.config(state=tk.NORMAL)
                     self.set_textarea(self.result_textarea, factory.template)
+
+                    title = 'Building Template'
+                    self.snapshot.update(title=title)
+                    self.set_title(title=title)
                 except Exception as ex:
                     error = '{}: {}'.format(type(ex).__name__, ex)
                     create_msgbox(title='RegexBuilder Error', error=error)
@@ -962,6 +987,7 @@ class Application:
                 if template_name:
                     user_template = UserTemplate()
                     template = user_template.search(template_name)
+                    self.result_btn.config(state=tk.NORMAL)
                     self.save_as_btn.config(state=tk.NORMAL)
                     self.copy_text_btn.config(state=tk.NORMAL)
                     self.test_data_btn_var.set('Test Data')
@@ -972,6 +998,10 @@ class Application:
                     else:
                         self.snapshot.update(result=user_template.status)
                         self.set_textarea(self.result_textarea, user_template.status)
+
+                    title = 'Searching Template'
+                    self.snapshot.update(title=title)
+                    self.set_title(title=title)
                 else:
                     title = 'Empty Template Name'
                     error = 'CANT retrieve template with empty template name.'
@@ -1045,11 +1075,18 @@ class Application:
             if is_tmpl_name:
                 if self.prev_widget.selection_present():
                     self.prev_widget.delete(tk.SEL_FIRST, tk.SEL_LAST)
+                    title = 'Clearing Selected Text'
                 else:
                     self.template_name_var.set('')
+                    title = 'Clearing Template Name'
+
+                self.snapshot.update(title=title)
+                self.set_title(title=title)
+                self.prev_widget.focus()
             else:
                 if is_input_area and self.prev_widget.tag_ranges(tk.SEL):
                     self.prev_widget.delete(tk.SEL_FIRST, tk.SEL_LAST)
+                    title = 'Clearing Selected Text'
                 else:
                     Application.clear_textarea(self.input_textarea)
                     Application.clear_textarea(self.result_textarea)
@@ -1070,7 +1107,11 @@ class Application:
                     self.template_name_var.set('')
                     self.search_chkbox_var.set(False)
                     # self.root.clipboard_clear()
-                    self.set_title()
+                    title = 'Clearing Input Text + Test Data'
+
+                self.snapshot.update(title=title)
+                self.set_title(title=title)
+                self.input_textarea.focus()
 
         def callback_copy_text_btn():
             prev_widget_name = str(self.prev_widget)
@@ -1079,16 +1120,22 @@ class Application:
             if is_tmpl_name:
                 if self.prev_widget.selection_present():
                     content = self.prev_widget.selection_get()
+                    title = 'Copying Selected Text'
                 else:
                     content = self.template_name_var.get()
+                    title = 'Copied Template Name'
             elif is_input_area:
                 if self.prev_widget.tag_ranges(tk.SEL):
                     content = self.prev_widget.selection_get()
+                    title = 'Copying Selected Text'
                 else:
                     content = Application.get_textarea(self.input_textarea)
+                    title = 'Copying Input Text'
             else:
                 content = Application.get_textarea(self.result_textarea)
+                title = 'Copying Output Text'
 
+            self.set_title(title=title)
             self.root.clipboard_clear()
             self.root.clipboard_append(content)
             self.root.update()
@@ -1108,20 +1155,36 @@ class Application:
                 if is_tmpl_name:
                     if self.prev_widget.selection_present():
                         self.prev_widget.delete(tk.SEL_FIRST, tk.SEL_LAST)
+                    index = self.prev_widget.index(tk.INSERT)
                     self.prev_widget.insert(tk.INSERT, data)
+                    self.prev_widget.selection_range(index, index + len(data))
+                    self.prev_widget.focus()
+                    title = 'PASTE On Template Name'
                 elif is_input_area and is_not_empty:
                     if self.prev_widget.tag_ranges(tk.SEL):
                         self.prev_widget.delete(tk.SEL_FIRST, tk.SEL_LAST)
+                    index = self.prev_widget.index(tk.INSERT)
                     self.prev_widget.insert(tk.INSERT, data)
+                    self.prev_widget.tag_add(
+                        tk.SEL, index, '{}+{}c'.format(index, len(data))
+                    )
+                    self.prev_widget.focus()
+                    title = 'PASTE On Input Area'
                 else:
+                    self.clear_text_btn.invoke()
                     self.test_data_btn.config(state=tk.NORMAL)
                     self.test_data_btn_var.set('Test Data')
                     self.set_textarea(self.result_textarea, '')
                     self.snapshot.update(test_data=data)
                     self.snapshot.update(result='')
 
-                    title = '<<PASTE - Clipboard>>'
-                    self.set_textarea(self.input_textarea, data, title=title)
+                    title = 'PASTE + LOAD Test Data'
+                    self.set_textarea(self.input_textarea, data)
+                    self.input_textarea.focus()
+
+                self.snapshot.update(title=title)
+                self.set_title(title=title)
+
             except Exception as ex:  # noqa
                 create_msgbox(
                     title='Empty Clipboard',
@@ -1154,6 +1217,9 @@ class Application:
                     **kwargs
                 )
                 script = factory.create_python_test()
+                title = 'Building Python Snippet Script'
+                self.snapshot.update(title=title)
+                self.set_title(title=title)
                 self.set_textarea(self.result_textarea, script)
                 self.test_data_btn_var.set('Test Data')
                 self.snapshot.update(result=script)
@@ -1189,6 +1255,9 @@ class Application:
                     **kwargs
                 )
                 script = factory.create_unittest()
+                title = 'Building Python Unittest Script'
+                self.snapshot.update(title=title)
+                self.set_title(title=title)
                 self.set_textarea(self.result_textarea, script)
                 self.test_data_btn_var.set('Test Data')
                 self.snapshot.update(result=script)
@@ -1224,6 +1293,9 @@ class Application:
                     **kwargs
                 )
                 script = factory.create_pytest()
+                title = 'Building Python Pytest Script'
+                self.snapshot.update(title=title)
+                self.set_title(title=title)
                 self.set_textarea(self.result_textarea, script)
                 self.test_data_btn_var.set('Test Data')
                 self.snapshot.update(result=script)
@@ -1244,12 +1316,16 @@ class Application:
             name = self.test_data_btn_var.get()
             if name == 'Test Data':
                 self.test_data_btn_var.set('Hide')
+                title = self.root.title().replace(' - ' + self._base_title, '')
+                self.snapshot.update(title=title)
+                self.set_title(title='Showing Test Data')
                 self.set_textarea(
                     self.result_textarea,
                     self.snapshot.test_data  # noqa
                 )
             else:
                 self.test_data_btn_var.set('Test Data')
+                self.set_title(title=self.snapshot.title)
                 self.set_textarea(
                     self.result_textarea,
                     self.snapshot.result  # noqa
@@ -1265,49 +1341,64 @@ class Application:
                 )
                 return
 
-            user_data = Application.get_textarea(self.input_textarea)
-            if not user_data:
-                create_msgbox(
-                    title='Empty Data',
-                    error="Can NOT build regex pattern without data."
-                )
-                return
+            if self.build_btn_var.get() == 'Search':
+                template = self.snapshot.template   # noqa
 
-            try:
-                kwargs = self.get_template_args()
-                factory = TemplateBuilder(user_data=user_data, **kwargs)
-                self.snapshot.update(user_data=user_data)
-                self.snapshot.update(template=factory.template)
-                self.snapshot.update(is_built=True)
-                stream = StringIO(factory.template)  # noqa
-                parser = TextFSM(stream)
-                rows = parser.ParseTextToDicts(self.snapshot.test_data)  # noqa
+            if self.build_btn_var.get() == 'Build':
+                user_data = Application.get_textarea(self.input_textarea)
+                if not user_data:
+                    create_msgbox(
+                        title='Empty Data',
+                        error="Can NOT build regex pattern without data."
+                    )
+                    return
 
-                result = ''
-                test_data = self.snapshot.test_data  # noqa
-                template = factory.template
-                fmt = '\n\n<<{}>>\n\n{{}}'.format('=' * 20)
+                try:
+                    kwargs = self.get_template_args()
+                    factory = TemplateBuilder(user_data=user_data, **kwargs)
+                    self.snapshot.update(user_data=user_data)
+                    self.snapshot.update(template=factory.template)
+                    self.snapshot.update(is_built=True)
+                    template = factory.template
+                except Exception as ex:
+                    error = '{}: {}'.format(type(ex).__name__, ex)
+                    create_msgbox(title='RegexBuilder Error', error=error)
+                    return
 
-                if self.template_chkbox_var.get() and template:
-                    result += fmt.format(template) if result else template
+            stream = StringIO(template)
+            parser = TextFSM(stream)
+            rows = parser.ParseTextToDicts(self.snapshot.test_data)  # noqa
 
-                if self.test_data_chkbox_var.get() and test_data:  # noqa
-                    result += fmt.format(test_data) if result else test_data
+            result = ''
+            test_data = self.snapshot.test_data  # noqa
+            fmt = '\n\n<<{}>>\n\n{{}}'.format('=' * 20)
 
-                if rows and self.tabular_chkbox_var.get():
-                    tabular_obj = Tabular(rows)
-                    tabular_data = tabular_obj.get()
-                    result += fmt.format(tabular_data) if result else tabular_data
-                else:
-                    pretty_data = pformat(rows)
-                    result += fmt.format(pretty_data) if result else pretty_data
+            lst = []
 
-                self.test_data_btn_var.set('Test Data')
-                self.snapshot.update(result=result)
-                self.set_textarea(self.result_textarea, result)
-            except Exception as ex:
-                error = '{}: {}'.format(type(ex).__name__, ex)
-                create_msgbox(title='RegexBuilder Error', error=error)
+            if self.template_chkbox_var.get() and template:
+                lst.append('Template')
+                result += fmt.format(template) if result else template
+
+            if self.test_data_chkbox_var.get() and test_data:  # noqa
+                lst.append('Test Data')
+                result += fmt.format(test_data) if result else test_data
+
+            lst.append('Test Result')
+            if rows and self.tabular_chkbox_var.get():
+                tabular_obj = Tabular(rows)
+                tabular_data = tabular_obj.get()
+                result += fmt.format(tabular_data) if result else tabular_data
+            else:
+                pretty_data = pformat(rows)
+                result += fmt.format(pretty_data) if result else pretty_data
+
+            self.test_data_btn_var.set('Test Data')
+            self.snapshot.update(result=result)
+
+            title = 'Showing {}'.format(' + '.join(lst))
+            self.snapshot.update(title=title)
+            self.set_title(title=title)
+            self.set_textarea(self.result_textarea, result)
 
         def callback_store_btn():
             user_template = UserTemplate()
@@ -1349,21 +1440,34 @@ class Application:
                 self.unittest_btn.configure(state=tk.DISABLED)
                 self.pytest_btn.configure(state=tk.DISABLED)
                 self.store_btn.configure(state=tk.DISABLED)
+
+                title = self.root.title().replace(' - ' + self._base_title, '')
+                self.snapshot.update(title=title)
+                self.set_title(title='Searching Template')
             else:
                 self.build_btn_var.set('Build')
-                if self.snapshot.is_built:  # noqa
-                    self.snippet_btn.configure(state=tk.NORMAL)
-                    self.unittest_btn.configure(state=tk.NORMAL)
-                    self.pytest_btn.configure(state=tk.NORMAL)
-                    self.store_btn.configure(state=tk.NORMAL)
+                self.snippet_btn.configure(state=tk.NORMAL)
+                self.unittest_btn.configure(state=tk.NORMAL)
+                self.pytest_btn.configure(state=tk.NORMAL)
+                self.store_btn.configure(state=tk.NORMAL)
+
+                title_ = self.snapshot.title
+                title = title_ if title_ != 'Searching Template' else ''
+                self.snapshot.update(title=title)
+                self.set_title(title=title)
 
         def callback_app_backup_refresh_btn():
             user_data = self.snapshot.switch_app_user_data      # noqa
             try:
+                curr_template = Application.get_textarea(self.input_textarea).strip()
                 kwargs = self.get_template_args()
                 factory = TemplateBuilder(user_data=user_data, **kwargs)
                 self.snapshot.update(switch_app_template=factory.template)
                 self.set_textarea(self.input_textarea, factory.template)
+                if curr_template != factory.template.strip():
+                    title = 'Template Is Refreshed'
+                    self.snapshot.update(stored_title=title)
+                    self.set_title(title=title)
             except Exception as ex:
                 error = '{}: {}'.format(type(ex).__name__, ex)
                 create_msgbox(title='RegexBuilder Error', error=error)
@@ -1386,9 +1490,13 @@ class Application:
                 return
 
             user_data = self.get_textarea(self.input_textarea)
-            user_template.write(tmpl_name, user_data.strip())
+            is_saved = user_template.write(tmpl_name, user_data.strip())
 
-            self.set_textarea(self.result_textarea, user_template.read())
+            if is_saved:
+                self.set_textarea(self.result_textarea, user_template.read())
+                title = '{} Is Saved'.format(tmpl_name)
+                self.snapshot.update(stored_title=title)
+                self.set_title(title=title)
 
         # def callback_rf_btn():
         #     create_msgbox(
@@ -1399,13 +1507,13 @@ class Application:
         # customize width for buttons
         btn_width = 6 if self.is_macos else 8
         # open button
-        open_file_btn = self.Button(
+        self.open_file_btn = self.Button(
             self.entry_frame, text='Open',
             name='main_open_btn',
-            command=self.callback_file_open,
+            command=self.callback_open_file,
             width=btn_width
         )
-        open_file_btn.grid(row=0, column=0, padx=(2, 0), pady=(2, 0))
+        self.open_file_btn.grid(row=0, column=0, padx=(2, 0), pady=(2, 0))
 
         # Save As button
         self.save_as_btn = self.Button(
@@ -1430,32 +1538,32 @@ class Application:
         self.copy_text_btn.grid(row=0, column=2, pady=(2, 0))
 
         # paste button
-        paste_text_btn = ttk.Button(
+        self.paste_text_btn = ttk.Button(
             self.entry_frame, text='Paste',
             name='main_paste_btn',
             command=callback_paste_text_btn,
             width=btn_width
         )
-        paste_text_btn.grid(row=0, column=3, pady=(2, 0))
+        self.paste_text_btn.grid(row=0, column=3, pady=(2, 0))
 
         # clear button
-        clear_text_btn = self.Button(
+        self.clear_text_btn = self.Button(
             self.entry_frame, text='Clear',
             name='main_clear_btn',
             command=callback_clear_text_btn,
             width=btn_width
         )
-        clear_text_btn.grid(row=0, column=4, pady=(2, 0))
+        self.clear_text_btn.grid(row=0, column=4, pady=(2, 0))
 
         # build button
-        build_btn = self.Button(
+        self.build_btn = self.Button(
             self.entry_frame,
             textvariable=self.build_btn_var,
             name='main_build_btn',
             command=callback_build_btn,
             width=btn_width
         )
-        build_btn.grid(row=0, column=5, pady=(2, 0))
+        self.build_btn.grid(row=0, column=5, pady=(2, 0))
 
         # snippet button
         self.snippet_btn = self.Button(
