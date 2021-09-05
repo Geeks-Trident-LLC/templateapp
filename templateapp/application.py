@@ -595,6 +595,10 @@ class Application:
         self.paned_window.remove(self.backup_frame)
         self.paned_window.insert(1, self.entry_frame)
 
+        stored_title = self.root.title().strip(' - ' + self._base_title)
+        self.snapshot.update(stored_title=stored_title)
+        self.set_title(title=self.snapshot.title)
+
     def shift_to_backup_app(self):
         """Switch from main app to backup app"""
         self.paned_window.remove(self.entry_frame)
