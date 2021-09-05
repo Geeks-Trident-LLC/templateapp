@@ -609,7 +609,7 @@ class Application:
 
         title = self.root.title().strip(' - ' + self._base_title)
         self.snapshot.update(title=title)
-        stored_title = self.snapshot.stored_title or '<< Storing Template >>'
+        stored_title = self.snapshot.stored_title or 'Storing Template'
         self.set_title(title=stored_title)
 
     def callback_focus(self, event):
@@ -640,7 +640,7 @@ class Application:
                 self.test_data_btn_var.set('Test Data')
                 self.set_textarea(self.result_textarea, '')
                 self.snapshot.update(test_data=content)
-                title = '<< Open {} + LOAD Test Data >>'.format(filename)
+                title = 'Open {} + LOAD Test Data'.format(filename)
                 self.set_textarea(self.input_textarea, content, title=title)
                 self.input_textarea.focus()
 
@@ -987,6 +987,7 @@ class Application:
                 if template_name:
                     user_template = UserTemplate()
                     template = user_template.search(template_name)
+                    self.result_btn.config(state=tk.NORMAL)
                     self.save_as_btn.config(state=tk.NORMAL)
                     self.copy_text_btn.config(state=tk.NORMAL)
                     self.test_data_btn_var.set('Test Data')
@@ -1074,16 +1075,18 @@ class Application:
             if is_tmpl_name:
                 if self.prev_widget.selection_present():
                     self.prev_widget.delete(tk.SEL_FIRST, tk.SEL_LAST)
-                    title = '<< Cleared Selecting Text - Template Name >>'
+                    title = 'Clearing Selected Text'
                 else:
                     self.template_name_var.set('')
-                    title = '<< Cleared Template Name >>'
+                    title = 'Clearing Template Name'
+
+                self.snapshot.update(title=title)
                 self.set_title(title=title)
                 self.prev_widget.focus()
             else:
                 if is_input_area and self.prev_widget.tag_ranges(tk.SEL):
                     self.prev_widget.delete(tk.SEL_FIRST, tk.SEL_LAST)
-                    title = '<< Clearing Selecting Text - Input >>'
+                    title = 'Clearing Selected Text'
                 else:
                     Application.clear_textarea(self.input_textarea)
                     Application.clear_textarea(self.result_textarea)
@@ -1104,8 +1107,9 @@ class Application:
                     self.template_name_var.set('')
                     self.search_chkbox_var.set(False)
                     # self.root.clipboard_clear()
-                    title = '<< Cleared Input Text + Test Data >>'
+                    title = 'Clearing Input Text + Test Data'
 
+                self.snapshot.update(title=title)
                 self.set_title(title=title)
                 self.input_textarea.focus()
 
@@ -1116,20 +1120,20 @@ class Application:
             if is_tmpl_name:
                 if self.prev_widget.selection_present():
                     content = self.prev_widget.selection_get()
-                    title = '<< Copied Selecting Text of Template Name >>'
+                    title = 'Copying Selected Text'
                 else:
                     content = self.template_name_var.get()
-                    title = '<< Copied Template Name >>'
+                    title = 'Copied Template Name'
             elif is_input_area:
                 if self.prev_widget.tag_ranges(tk.SEL):
                     content = self.prev_widget.selection_get()
-                    title = '<< Copied Selecting Text of Input >>'
+                    title = 'Copying Selected Text'
                 else:
                     content = Application.get_textarea(self.input_textarea)
-                    title = '<< Copied Input Text >>'
+                    title = 'Copying Input Text'
             else:
                 content = Application.get_textarea(self.result_textarea)
-                title = '<< Copied Output Text >>'
+                title = 'Copying Output Text'
 
             self.set_title(title=title)
             self.root.clipboard_clear()
@@ -1155,7 +1159,7 @@ class Application:
                     self.prev_widget.insert(tk.INSERT, data)
                     self.prev_widget.selection_range(index, index + len(data))
                     self.prev_widget.focus()
-                    self.set_title(title='<<PASTE clipboard - Template Name>>')
+                    title = 'PASTE On Template Name'
                 elif is_input_area and is_not_empty:
                     if self.prev_widget.tag_ranges(tk.SEL):
                         self.prev_widget.delete(tk.SEL_FIRST, tk.SEL_LAST)
@@ -1165,7 +1169,7 @@ class Application:
                         tk.SEL, index, '{}+{}c'.format(index, len(data))
                     )
                     self.prev_widget.focus()
-                    self.set_title(title='<<PASTE clipboard - Input >>')
+                    title = 'PASTE On Input Area'
                 else:
                     self.clear_text_btn.invoke()
                     self.test_data_btn.config(state=tk.NORMAL)
@@ -1174,9 +1178,12 @@ class Application:
                     self.snapshot.update(test_data=data)
                     self.snapshot.update(result='')
 
-                    title = '<<PASTE + LOAD Test Data>>'
-                    self.set_textarea(self.input_textarea, data, title=title)
+                    title = 'PASTE + LOAD Test Data'
+                    self.set_textarea(self.input_textarea, data)
                     self.input_textarea.focus()
+
+                self.snapshot.update(title=title)
+                self.set_title(title=title)
 
             except Exception as ex:  # noqa
                 create_msgbox(
@@ -1210,8 +1217,10 @@ class Application:
                     **kwargs
                 )
                 script = factory.create_python_test()
-                title = '<< Python Snippet Script >>'
-                self.set_textarea(self.result_textarea, script, title=title)
+                title = 'Building Python Snippet Script'
+                self.snapshot.update(title=title)
+                self.set_title(title=title)
+                self.set_textarea(self.result_textarea, script)
                 self.test_data_btn_var.set('Test Data')
                 self.snapshot.update(result=script)
                 self.save_as_btn.config(state=tk.NORMAL)
@@ -1246,8 +1255,10 @@ class Application:
                     **kwargs
                 )
                 script = factory.create_unittest()
-                title = '<< Python Unittest Script >>'
-                self.set_textarea(self.result_textarea, script, title=title)
+                title = 'Building Python Unittest Script'
+                self.snapshot.update(title=title)
+                self.set_title(title=title)
+                self.set_textarea(self.result_textarea, script)
                 self.test_data_btn_var.set('Test Data')
                 self.snapshot.update(result=script)
                 self.save_as_btn.config(state=tk.NORMAL)
@@ -1282,8 +1293,10 @@ class Application:
                     **kwargs
                 )
                 script = factory.create_pytest()
-                title = '<< Python Pytest Script >>'
-                self.set_textarea(self.result_textarea, script, title=title)
+                title = 'Building Python Pytest Script'
+                self.snapshot.update(title=title)
+                self.set_title(title=title)
+                self.set_textarea(self.result_textarea, script)
                 self.test_data_btn_var.set('Test Data')
                 self.snapshot.update(result=script)
                 self.save_as_btn.config(state=tk.NORMAL)
@@ -1305,7 +1318,7 @@ class Application:
                 self.test_data_btn_var.set('Hide')
                 title = self.root.title().strip(self._base_title).strip('- ')
                 self.snapshot.update(title=title)
-                self.set_title(title='<< Showing Test Data >>')
+                self.set_title(title='Showing Test Data')
                 self.set_textarea(
                     self.result_textarea,
                     self.snapshot.test_data  # noqa
@@ -1373,8 +1386,10 @@ class Application:
                 self.test_data_btn_var.set('Test Data')
                 self.snapshot.update(result=result)
 
-                title = 'Showing << {} >>'.format(' + '.join(lst))
-                self.set_textarea(self.result_textarea, result, title=title)
+                title = 'Showing {}'.format(' + '.join(lst))
+                self.snapshot.update(title=title)
+                self.set_title(title=title)
+                self.set_textarea(self.result_textarea, result)
             except Exception as ex:
                 error = '{}: {}'.format(type(ex).__name__, ex)
                 create_msgbox(title='RegexBuilder Error', error=error)
@@ -1444,7 +1459,7 @@ class Application:
                 self.snapshot.update(switch_app_template=factory.template)
                 self.set_textarea(self.input_textarea, factory.template)
                 if curr_template != factory.template.strip():
-                    title = '<< Template Is Refreshed >>'
+                    title = 'Template Is Refreshed'
                     self.snapshot.update(stored_title=title)
                     self.set_title(title=title)
             except Exception as ex:
@@ -1473,7 +1488,7 @@ class Application:
 
             if is_saved:
                 self.set_textarea(self.result_textarea, user_template.read())
-                title = '<< {} Is Saved >>'.format(tmpl_name)
+                title = '{} Is Saved'.format(tmpl_name)
                 self.snapshot.update(stored_title=title)
                 self.set_title(title=title)
 
