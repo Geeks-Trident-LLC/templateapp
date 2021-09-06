@@ -43,6 +43,10 @@ class ParsedLine:
     line (str): a line data.
     template_op (str): template operator.
     ignore_case (bool): a case insensitive flag.
+    is_comment (bool): a indicator for comment.
+    comment_str (str): a comment text.
+    is_kept (bool): a indicator to keep AS-IS.
+    kept_str (str): a kept text.
     variables (list): a list of variables.
 
     Properties
@@ -66,6 +70,10 @@ class ParsedLine:
         self.line = ''
         self.template_op = ''
         self.ignore_case = False
+        self.is_comment = False
+        self.comment_text = ''
+        self.is_kept = False
+        self.kept_text = ''
         self.variables = list()
         self.build()
 
@@ -97,10 +105,27 @@ class ParsedLine:
         if self.is_empty:
             return ''
 
+        if self.is_comment:
+            return self.comment_text
+
+        if self.is_kept:
+            return self.kept_text
+
         if self.is_a_word:
             return self.text
 
         pat_obj = LinePattern(self.line, ignore_case=self.ignore_case)
+
+        if self.is_comment:
+            text = self.text[8:].strip()
+            return '  # {}'.format(text)
+
+        if self.is_kept:
+            text = self.text
+            if re.match(r' *\^', text):
+                return '  {}'.format(text.lstrip())
+            else:
+                return '  ^{}'.format(text)
 
         if pat_obj.variables:
             self.variables = pat_obj.variables[:]
@@ -128,17 +153,56 @@ class ParsedLine:
         """parse line to reapply for building template"""
         lst = self.text.rsplit(' -> ', 1)
         if len(lst) == 2:
-            self.template_op = lst[-1].strip()
+            tmpl_op = lst[-1].strip()
+            first, *remaining = tmpl_op.split(' ', 1)
+
+            tbl = {'norecord': 'NoRecord', 'clearall': 'ClearAll'}
+            if '.' in first:
+                pat = r'(?P<lop>next|continue|error)\.' \
+                      r'(?P<rop>norecord|record|clearall|clear)$'
+                match = re.match(pat, first, re.I)
+                if match:
+                    lop = match.group('lop').title()
+                    rop = match.group('rop').title()
+                    rop = tbl.get(rop.lower(), rop)
+                    op = '{}.{}'.format(lop, rop)
+                else:
+                    op = first
+                tmpl_op = '{} {}'.format(op, ''.join(remaining))
+            else:
+                pat = r'(next|continue|error|norecord|record|clearall|clear)$'
+                if re.match(pat, first, re.I):
+                    op = first.title()
+                    op = tbl.get(op.lower(), op)
+                else:
+                    op = first
+                tmpl_op = '{} {}'.format(op, ''.join(remaining))
+
+            self.template_op = tmpl_op.strip()
             text = lst[0].rstrip()
         else:
             text = self.text
 
-        pat = r'(?P<ic>ignore_case )?(?P<line>.*)'
+        pat = r'(?P<flag>(ignore_case|comment|keep) )?(?P<line>.*)'
         match = re.match(pat, text, re.I)
         if match:
-            self.ignore_case = bool(match.groupdict().get('ic'))
-            line = match.groupdict().get('line')
-            self.line = line or ''
+            flag = match.group('flag') or ''
+            flag = flag.strip()
+            self.ignore_case = flag == 'ignore_case'
+            self.is_comment = flag == 'comment'
+            self.is_kept = flag == 'keep'
+            self.line = match.group('line') or ''
+
+            if self.is_comment:
+                txt = self.text[8:].strip().lstrip('#')
+                self.comment_text = '  # {}'.format(txt)
+
+            if self.is_kept:
+                txt = self.text[5:]
+                if txt.lstrip().startswith('^'):
+                    self.kept_text = '  {}'.format(txt.lstrip())
+                else:
+                    self.kept_text = '  ^{}'.format(txt)
         else:
             error = 'Invalid format - {!r}'.format(self.text)
             raise TemplateParsedLineError(error)
@@ -158,12 +222,20 @@ class TemplateBuilder:
     description (str): a description about template.  Default is empty.
     filename (str): a saving file name for a generated test script to file name.
     other_options (dict): other options for Pro or Enterprise edition.
+    variables (list): a list of variable.
+    statements (list): a list of template statement.
+    template (str): a generated template.
+    template_parser (TextFSM): instance of TextFSM.
+    verified_message (str): a verified message.
+    debug (bool): a flag to check bad template.
+    bad_template (str): a bad generated template.
 
     Methods
     -------
     TemplateBuilder.convert_to_string(data) -> str
     prepare() -> None
     build_template_comment() -> None
+    reformat() -> None
     build() -> None
     show_debug_info(test_result=None, expected_result=None) -> None
     verify(expected_rows_count=None, expected_result=None, debug=False) -> bool
@@ -195,8 +267,9 @@ class TemplateBuilder:
         self.statements = []
         self.template = ''
         self.template_parser = None
-        self.result = None
         self.verified_message = ''
+        self.debug = False
+        self.bad_template = ''
 
         self.build()
 
@@ -257,6 +330,33 @@ class TemplateBuilder:
         lst.append('#' * 80)
         return '\n'.join(lst)
 
+    def reformat(self):
+        if not self.template:
+            return
+
+        lst = []
+        pat = r'[\r\n]+[a-zA-Z]\w*([\r\n]+|$)'
+        start = 0
+        for m in re.finditer(pat, self.template):
+            before_match = m.string[start:m.start()]
+            state = m.group().strip()
+            if before_match.strip():
+                for line in before_match.splitlines():
+                    if line.strip():
+                        lst.append(line)
+            lst.append('')
+            lst.append(state)
+            start = m.end()
+        else:
+            if lst:
+                after_match = m.string[m.end():]
+                if after_match.strip():
+                    for line in after_match.splitlines():
+                        if line.strip():
+                            lst.append(line)
+
+        self.template = '\n'.join(lst)
+
     def build(self):
         """build template
 
@@ -276,13 +376,19 @@ class TemplateBuilder:
                 template_definition = 'Start\n{}'.format(template_definition)
             fmt = '{}\n{}\n\n{}'
             self.template = fmt.format(comment, variables, template_definition)
+            self.reformat()
 
             try:
                 stream = StringIO(self.template)
                 self.template_parser = TextFSM(stream)
             except Exception as ex:
                 error = '{}: {}'.format(type(ex).__name__, ex)
-                raise TemplateBuilderError(error)
+                if not self.debug:
+                    raise TemplateBuilderError(error)
+                else:
+                    self.logger.error(error)
+                    self.bad_template = '# {}\n{}'.format(error, self.template)
+                    self.debug = False
         else:
             msg = 'user_data does not have any assigned variable for template.'
             raise TemplateBuilderInvalidFormat(msg)
