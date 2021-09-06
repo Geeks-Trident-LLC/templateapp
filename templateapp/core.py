@@ -226,6 +226,7 @@ class TemplateBuilder:
     TemplateBuilder.convert_to_string(data) -> str
     prepare() -> None
     build_template_comment() -> None
+    reformat() -> None
     build() -> None
     show_debug_info(test_result=None, expected_result=None) -> None
     verify(expected_rows_count=None, expected_result=None, debug=False) -> bool
@@ -319,6 +320,33 @@ class TemplateBuilder:
         lst.append('#' * 80)
         return '\n'.join(lst)
 
+    def reformat(self):
+        if not self.template:
+            return
+
+        lst = []
+        pat = r'[\r\n]+[a-zA-Z]\w*([\r\n]+|$)'
+        start = 0
+        for m in re.finditer(pat, self.template):
+            before_match = m.string[start:m.start()]
+            state = m.group().strip()
+            if before_match.strip():
+                for line in before_match.splitlines():
+                    if line.strip():
+                        lst.append(line)
+            lst.append('')
+            lst.append(state)
+            start = m.end()
+        else:
+            if lst:
+                after_match = m.string[m.end():]
+                if after_match.strip():
+                    for line in after_match.splitlines():
+                        if line.strip():
+                            lst.append(line)
+
+        self.template = '\n'.join(lst)
+
     def build(self):
         """build template
 
@@ -338,6 +366,7 @@ class TemplateBuilder:
                 template_definition = 'Start\n{}'.format(template_definition)
             fmt = '{}\n{}\n\n{}'
             self.template = fmt.format(comment, variables, template_definition)
+            self.reformat()
 
             try:
                 stream = StringIO(self.template)
