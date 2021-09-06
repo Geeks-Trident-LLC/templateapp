@@ -43,6 +43,10 @@ class ParsedLine:
     line (str): a line data.
     template_op (str): template operator.
     ignore_case (bool): a case insensitive flag.
+    is_comment (bool): a indicator for comment.
+    comment_str (str): a comment text.
+    is_kept (bool): a indicator to keep AS-IS.
+    kept_str (str): a kept text.
     variables (list): a list of variables.
 
     Properties
@@ -66,6 +70,10 @@ class ParsedLine:
         self.line = ''
         self.template_op = ''
         self.ignore_case = False
+        self.is_comment = False
+        self.comment_text = ''
+        self.is_kept = False
+        self.kept_text = ''
         self.variables = list()
         self.build()
 
@@ -97,10 +105,27 @@ class ParsedLine:
         if self.is_empty:
             return ''
 
+        if self.is_comment:
+            return self.comment_text
+
+        if self.is_kept:
+            return self.kept_text
+
         if self.is_a_word:
             return self.text
 
         pat_obj = LinePattern(self.line, ignore_case=self.ignore_case)
+
+        if self.is_comment:
+            text = self.text[8:].strip()
+            return '  # {}'.format(text)
+
+        if self.is_kept:
+            text = self.text
+            if re.match(r' *\^', text):
+                return '  {}'.format(text.lstrip())
+            else:
+                return '  ^{}'.format(text)
 
         if pat_obj.variables:
             self.variables = pat_obj.variables[:]
@@ -133,12 +158,26 @@ class ParsedLine:
         else:
             text = self.text
 
-        pat = r'(?P<ic>ignore_case )?(?P<line>.*)'
+        pat = r'(?P<flag>(ignore_case|comment|keep) )?(?P<line>.*)'
         match = re.match(pat, text, re.I)
         if match:
-            self.ignore_case = bool(match.groupdict().get('ic'))
-            line = match.groupdict().get('line')
-            self.line = line or ''
+            flag = match.group('flag') or ''
+            flag = flag.strip()
+            self.ignore_case = flag == 'ignore_case'
+            self.is_comment = flag == 'comment'
+            self.is_kept = flag == 'keep'
+            self.line = match.group('line') or ''
+
+            if self.is_comment:
+                txt = self.text[8:].strip().lstrip('#')
+                self.comment_text = '  # {}'.format(txt)
+
+            if self.is_kept:
+                txt = self.text[5:]
+                if txt.lstrip().startswith('^'):
+                    self.kept_text = '  {}'.format(txt.lstrip())
+                else:
+                    self.kept_text = '  ^{}'.format(txt)
         else:
             error = 'Invalid format - {!r}'.format(self.text)
             raise TemplateParsedLineError(error)
