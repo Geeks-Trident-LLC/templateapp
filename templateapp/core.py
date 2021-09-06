@@ -156,27 +156,29 @@ class ParsedLine:
             tmpl_op = lst[-1].strip()
             first, *remaining = tmpl_op.split(' ', 1)
 
-            pat = r'\b(?P<lop>next|continue|error)?\.?' \
-                  r'(?P<rop>norecord|record|clearall|clear)?\b'
-            match = re.match(pat, first, re.I)
-            if match:
-                tbl = {'norecord': 'NoRecord', 'clearall': 'ClearAll'}
-                lop = match.group('lop') or ''
-                rop = match.group('rop') or ''
-                lop, rop = lop.title(), rop.title()
-                rop = tbl.get(rop.lower(), rop)
-                if lop or rop:
-                    lrop = '{}.{}'.format(lop, rop)
-                    op = lrop if lop and rop else lop if lop else rop
-                    if remaining:
-                        self.template_op = '{} {}'.format(op, remaining[0])
-                    else:
-                        self.template_op = op
+            tbl = {'norecord': 'NoRecord', 'clearall': 'ClearAll'}
+            if '.' in first:
+                pat = r'(?P<lop>next|continue|error)\.' \
+                      r'(?P<rop>norecord|record|clearall|clear)$'
+                match = re.match(pat, first, re.I)
+                if match:
+                    lop = match.group('lop').title()
+                    rop = match.group('rop').title()
+                    rop = tbl.get(rop.lower(), rop)
+                    op = '{}.{}'.format(lop, rop)
                 else:
-                    self.template_op = tmpl_op
+                    op = first
+                tmpl_op = '{} {}'.format(op, ''.join(remaining))
             else:
-                # self.template_op = lst[-1].strip()
-                self.template_op = tmpl_op
+                pat = r'(next|continue|error|norecord|record|clearall|clear)$'
+                if re.match(pat, first, re.I):
+                    op = first.title()
+                    op = tbl.get(op.lower(), op)
+                else:
+                    op = first
+                tmpl_op = '{} {}'.format(op, ''.join(remaining))
+
+            self.template_op = tmpl_op.strip()
             text = lst[0].rstrip()
         else:
             text = self.text
