@@ -220,6 +220,13 @@ class TemplateBuilder:
     description (str): a description about template.  Default is empty.
     filename (str): a saving file name for a generated test script to file name.
     other_options (dict): other options for Pro or Enterprise edition.
+    variables (list): a list of variable.
+    statements (list): a list of template statement.
+    template (str): a generated template.
+    template_parser (TextFSM): instance of TextFSM.
+    verified_message (str): a verified message.
+    debug (bool): a flag to check bad template.
+    bad_template (str): a bad generated template.
 
     Methods
     -------
@@ -258,8 +265,9 @@ class TemplateBuilder:
         self.statements = []
         self.template = ''
         self.template_parser = None
-        self.result = None
         self.verified_message = ''
+        self.debug = False
+        self.bad_template = ''
 
         self.build()
 
@@ -373,7 +381,12 @@ class TemplateBuilder:
                 self.template_parser = TextFSM(stream)
             except Exception as ex:
                 error = '{}: {}'.format(type(ex).__name__, ex)
-                raise TemplateBuilderError(error)
+                if not self.debug:
+                    raise TemplateBuilderError(error)
+                else:
+                    self.logger.error(error)
+                    self.bad_template = '# {}\n{}'.format(error, self.template)
+                    self.debug = False
         else:
             msg = 'user_data does not have any assigned variable for template.'
             raise TemplateBuilderInvalidFormat(msg)
