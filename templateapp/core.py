@@ -298,6 +298,11 @@ class TemplateBuilder:
 
             parsed_line = ParsedLine(line)
             statement = parsed_line.get_statement()
+            if statement.endswith(r'\$$'):
+                statement = '{}$$'.format(statement[:-3])
+            elif r'\$$ -> ' in statement:
+                statement = statement.replace(r'\$$ -> ', '$$ -> ')
+            statement = statement.replace(r'\$', r'\x24')
 
             if statement:
                 self.statements.append(statement)
