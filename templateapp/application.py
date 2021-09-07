@@ -21,6 +21,7 @@ from pprint import pformat
 from dlquery.collection import Tabular
 
 from templateapp import TemplateBuilder
+from templateapp.exceptions import TemplateBuilderInvalidFormat
 from templateapp.core import save_file
 
 from templateapp import version
@@ -449,6 +450,8 @@ class Application:
         self.result_btn = None
         self.store_btn = None
         self.search_chkbox = None
+        self.lookup_btn = None
+        self.close_lookup_btn = None
 
         self.curr_widget = None
         self.prev_widget = None
@@ -466,6 +469,8 @@ class Application:
         self.snapshot.update(switch_app_template='')
         self.snapshot.update(switch_app_user_data='')
         self.snapshot.update(switch_app_result_data='')
+        self.snapshot.update(main_input_textarea='')
+        self.snapshot.update(main_result_textarea='')
 
         # variables
         self.build_btn_var = tk.StringVar()
@@ -643,6 +648,8 @@ class Application:
                 title = 'Open {} + LOAD Test Data'.format(filename)
                 self.set_title(title=title)
                 self.set_textarea(self.input_textarea, content)
+                self.copy_text_btn.configure(state=tk.NORMAL)
+                self.save_as_btn.configure(state=tk.NORMAL)
                 self.input_textarea.focus()
 
     def callback_load_td_file(self):
@@ -667,6 +674,8 @@ class Application:
                 else:
                     self.set_textarea(self.result_textarea, content)
 
+                self.copy_text_btn.configure(state=tk.NORMAL)
+                self.save_as_btn.configure(state=tk.NORMAL)
                 self.snapshot.update(test_data=content)
                 title = 'LOAD Test Data - {}'.format(filename)
                 self.snapshot.update(title=title)
@@ -977,72 +986,50 @@ class Application:
         """Build input entry for regex GUI."""
 
         def callback_build_btn():
-            if self.build_btn_var.get() == 'Build':
-                user_data = Application.get_textarea(self.input_textarea)
-                if not user_data:
-                    create_msgbox(
-                        title='Empty Data',
-                        error="Can NOT build regex pattern without data."
-                    )
-                    return
+            user_data = Application.get_textarea(self.input_textarea)
+            if not user_data:
+                create_msgbox(
+                    title='Empty Data',
+                    error="Can NOT build regex pattern without data."
+                )
+                return
 
-                try:
-                    kwargs = self.get_template_args()
-                    factory = TemplateBuilder(user_data=user_data, **kwargs)
-                    self.snapshot.update(user_data=user_data)
-                    self.snapshot.update(result=factory.template)
-                    self.snapshot.update(template=factory.template)
-                    self.snapshot.update(swich_app_template='')
-                    self.snapshot.update(is_built=True)
-                    self.test_data_btn_var.set('Test Data')
-                    self.save_as_btn.config(state=tk.NORMAL)
-                    self.copy_text_btn.config(state=tk.NORMAL)
-                    self.set_textarea(self.result_textarea, factory.template)
+            try:
+                kwargs = self.get_template_args()
+                factory = TemplateBuilder(user_data=user_data, **kwargs)
+                self.snapshot.update(user_data=user_data)
+                self.snapshot.update(result=factory.template)
+                self.snapshot.update(template=factory.template)
+                self.snapshot.update(swich_app_template='')
+                self.snapshot.update(is_built=True)
+                self.test_data_btn_var.set('Test Data')
+                self.save_as_btn.config(state=tk.NORMAL)
+                self.copy_text_btn.config(state=tk.NORMAL)
+                self.set_textarea(self.result_textarea, factory.template)
 
-                    title = 'Building Template'
-                    self.snapshot.update(title=title)
-                    self.set_title(title=title)
-                except Exception as ex:
-                    error = '{}: {}'.format(type(ex).__name__, ex)
-                    create_msgbox(title='RegexBuilder Error', error=error)
-                    kwargs = self.get_template_args()
-                    factory = TemplateBuilder(user_data=user_data, debug=True, **kwargs)
-                    fmt = '# Please fix user_data to produce a good template\n{}'
-                    content = fmt.format(factory.bad_template)
-                    self.set_textarea(self.result_textarea, content)
-                    title = 'Bad Generated Template'
-                    self.snapshot.update(title=title)
-                    self.set_title(title=title)
+                title = 'Building Template'
+                self.snapshot.update(title=title)
+                self.set_title(title=title)
+            except TemplateBuilderInvalidFormat as ex:
+                error = '{}: {}'.format(type(ex).__name__, ex)
+                create_msgbox(title='RegexBuilder Error', error=error)
+            except Exception as ex:
+                error = '{}: {}'.format(type(ex).__name__, ex)
+                create_msgbox(title='RegexBuilder Error', error=error)
+                kwargs = self.get_template_args()
+                factory = TemplateBuilder(user_data=user_data, debug=True, **kwargs)
+                fmt = '# Please fix user_data to produce a good template\n{}'
+                content = fmt.format(factory.bad_template)
+                self.set_textarea(self.result_textarea, content)
+                title = 'Bad Generated Template'
+                self.snapshot.update(title=title)
+                self.set_title(title=title)
 
-                if self.snapshot.template:  # noqa
-                    self.store_btn.config(state=tk.NORMAL)
+            if self.snapshot.template:  # noqa
+                self.store_btn.config(state=tk.NORMAL)
 
-                if self.snapshot.is_built:  # noqa
-                    self.result_btn.config(state=tk.NORMAL)
-            else:
-                template_name = self.template_name_var.get().strip()
-                if template_name:
-                    user_template = UserTemplate()
-                    template = user_template.search(template_name)
-                    self.result_btn.config(state=tk.NORMAL)
-                    self.save_as_btn.config(state=tk.NORMAL)
-                    self.copy_text_btn.config(state=tk.NORMAL)
-                    self.test_data_btn_var.set('Test Data')
-                    if template:
-                        self.snapshot.update(template=template)
-                        self.snapshot.update(result=template)
-                        self.set_textarea(self.result_textarea, template)
-                    else:
-                        self.snapshot.update(result=user_template.status)
-                        self.set_textarea(self.result_textarea, user_template.status)
-
-                    title = 'Searching Template'
-                    self.snapshot.update(title=title)
-                    self.set_title(title=title)
-                else:
-                    title = 'Empty Template Name'
-                    error = 'CANT retrieve template with empty template name.'
-                    create_msgbox(title=title, error=error)
+            if self.snapshot.is_built:  # noqa
+                self.result_btn.config(state=tk.NORMAL)
 
         def callback_save_as_btn():
             prev_widget_name = str(self.prev_widget)
@@ -1103,7 +1090,17 @@ class Application:
                             if response:
                                 node = node.with_name(new_name)
                 filename = str(node)
-                save_file(filename, content)
+                if not content.strip():
+                    fmt = ('The content of {} is empty.\n'
+                           'Do you want save the empty file?')
+                    question = fmt.format(filename)
+                    title = '{} - {}'.format(title, 'Empty')
+                    response = create_msgbox(question=question, title=title)
+                else:
+                    response = 'yes'
+
+                if response == 'yes':
+                    save_file(filename, content)
 
         def callback_clear_text_btn():
             prev_widget_name = str(self.prev_widget)
@@ -1132,6 +1129,7 @@ class Application:
                     self.test_data_btn.config(state=tk.DISABLED)
                     self.result_btn.config(state=tk.DISABLED)
                     self.store_btn.config(state=tk.DISABLED)
+                    self.input_textarea.config(state=tk.NORMAL)
 
                     self.snapshot.update(user_data='')
                     self.snapshot.update(test_data=None)
@@ -1218,6 +1216,9 @@ class Application:
                     title = 'PASTE + LOAD Test Data'
                     self.set_textarea(self.input_textarea, data)
                     self.input_textarea.focus()
+
+                self.copy_text_btn.configure(state=tk.NORMAL)
+                self.save_as_btn.configure(state=tk.NORMAL)
 
                 self.snapshot.update(title=title)
                 self.set_title(title=title)
@@ -1378,25 +1379,24 @@ class Application:
                 )
                 return
 
-            if self.build_btn_var.get() == 'Search':
-                template = self.snapshot.template   # noqa
-            else:
-                user_data = Application.get_textarea(self.input_textarea)
-                if not user_data:
-                    create_msgbox(
-                        title='Empty Data',
-                        error="Can NOT build regex pattern without data."
-                    )
-                    return
+            user_data = Application.get_textarea(self.input_textarea)
+            if not user_data:
+                create_msgbox(
+                    title='Empty Data',
+                    error="Can NOT build regex pattern without data."
+                )
+                return
 
-                try:
-                    kwargs = self.get_template_args()
-                    factory = TemplateBuilder(user_data=user_data, **kwargs)
-                    self.snapshot.update(user_data=user_data)
-                    self.snapshot.update(template=factory.template)
-                    self.snapshot.update(is_built=True)
-                    template = factory.template
-                except Exception as ex:
+            try:
+                kwargs = self.get_template_args()
+                factory = TemplateBuilder(user_data=user_data, **kwargs)
+                self.snapshot.update(user_data=user_data)
+                self.snapshot.update(template=factory.template)
+                self.snapshot.update(is_built=True)
+                template = factory.template
+            except Exception as ex:
+                template = self.snapshot.template.strip()
+                if not template:
                     error = '{}: {}'.format(type(ex).__name__, ex)
                     create_msgbox(title='RegexBuilder Error', error=error)
                     return
@@ -1471,29 +1471,107 @@ class Application:
                 return
 
             if self.search_chkbox_var.get():
-                self.build_btn_var.set('Search')
+                self.open_file_btn.configure(state=tk.DISABLED)
+                self.copy_text_btn.configure(state=tk.DISABLED)
+                self.save_as_btn.configure(state=tk.DISABLED)
+                self.paste_text_btn.configure(state=tk.DISABLED)
+                self.build_btn.configure(state=tk.DISABLED)
                 self.snippet_btn.configure(state=tk.DISABLED)
                 self.unittest_btn.configure(state=tk.DISABLED)
                 self.pytest_btn.configure(state=tk.DISABLED)
+                self.result_btn.config(state=tk.DISABLED)
+                self.test_data_btn.config(state=tk.DISABLED)
                 self.store_btn.configure(state=tk.DISABLED)
+
+                self.input_textarea.configure(state=tk.DISABLED)
+                self.lookup_btn.grid(row=0, column=2, sticky=tk.W)
+                self.close_lookup_btn.grid(row=0, column=3, sticky=tk.W)
+
+                input_txt = Application.get_textarea(self.input_textarea)
+                result_txt = Application.get_textarea(self.result_textarea)
+                self.snapshot.update(main_input_textarea=input_txt)
+                self.snapshot.update(main_result_textarea=result_txt)
+
+                template_name = self.template_name_var.get().strip()
+                if template_name:
+                    template = user_template.search(template_name)
+                    if template:
+                        self.snapshot.update(template=template)
+                        self.snapshot.update(result=template)
+                        self.set_textarea(self.input_textarea, template)
+                else:
+                    self.set_textarea(self.input_textarea, '')
+
+                self.set_textarea(self.result_textarea, user_template.read())
 
                 title = self.root.title().replace(' - ' + self._base_title, '')
                 self.snapshot.update(title=title)
                 self.set_title(title='Searching Template')
             else:
-                self.build_btn_var.set('Build')
+                self.open_file_btn.configure(state=tk.NORMAL)
+                # self.copy_text_btn.configure(state=tk.NORMAL)
+                # self.save_as_btn.configure(state=tk.NORMAL)
+                self.paste_text_btn.configure(state=tk.NORMAL)
+                self.build_btn.configure(state=tk.NORMAL)
                 self.snippet_btn.configure(state=tk.NORMAL)
                 self.unittest_btn.configure(state=tk.NORMAL)
                 self.pytest_btn.configure(state=tk.NORMAL)
-                self.store_btn.configure(state=tk.NORMAL)
+
+                if self.snapshot.test_data:     # noqa
+                    self.result_btn.config(state=tk.NORMAL)
+                    self.test_data_btn.config(state=tk.NORMAL)
+
+                if self.snapshot.is_built:      # noqa
+                    self.store_btn.configure(state=tk.NORMAL)
+
+                self.input_textarea.configure(state=tk.NORMAL)
+                self.lookup_btn.grid_forget()
+                self.close_lookup_btn.grid_forget()
+
+                input_txt = Application.get_textarea(self.input_textarea)
+                pattern = r'#+\s+# *Template +is +generated '
+                if re.match(pattern, input_txt):
+                    self.set_textarea(self.result_textarea, input_txt)
+                else:
+                    self.test_data_btn_var.set('Test Data')
+                    self.set_textarea(
+                        self.result_textarea,
+                        self.snapshot.main_result_textarea,     # noqa
+                    )
+
+                self.set_textarea(
+                    self.input_textarea,
+                    self.snapshot.main_input_textarea,  # noqa
+                )
+
+                input_txt = Application.get_textarea(self.input_textarea)
+                result_txt = Application.get_textarea(self.result_textarea)
+
+                if input_txt or result_txt:
+                    self.copy_text_btn.configure(state=tk.NORMAL)
+                    self.save_as_btn.configure(state=tk.NORMAL)
 
                 title_ = self.snapshot.title    # noqa
-                if title_ != 'Searching Template' or title_ != self._base_title:
-                    title = title_
-                else:
-                    title = ''
+                title = '' if title_ == self._base_title else title_
                 self.snapshot.update(title=title)
                 self.set_title(title=title) if title else self.set_title()
+
+        def callback_lookup_btn():
+            template_name = self.template_name_var.get().strip()
+            if template_name:
+                user_template = UserTemplate()
+                template = user_template.search(template_name)
+                if template:
+                    self.snapshot.update(template=template)
+                    self.snapshot.update(result=template)
+                    self.set_textarea(self.input_textarea, template)
+                else:
+                    self.snapshot.update(result=user_template.status)
+                    self.set_textarea(self.input_textarea, user_template.status)
+            else:
+                title = 'Empty Template Name'
+                error = 'CANT retrieve template with empty template name.'
+                create_msgbox(title=title, error=error)
 
         def callback_app_backup_refresh_btn():
             user_data = self.snapshot.switch_app_user_data      # noqa
@@ -1678,10 +1756,24 @@ class Application:
 
         # template name textbox
         self.TextBox(
-            frame, width=50,
+            frame, width=46,
             name='main_template_name_textbox',
             textvariable=self.template_name_var
         ).grid(row=0, column=1, sticky=tk.W)
+
+        self.lookup_btn = self.Button(
+            frame, text='Lookup',
+            name='main_lookup_btn',
+            command=callback_lookup_btn,
+            width=btn_width
+        )
+
+        self.close_lookup_btn = self.Button(
+            frame, text='Close',
+            name='main_close_lookup_btn',
+            command=self.search_chkbox.invoke,
+            width=btn_width
+        )
 
         # Robotframework button
         # rf_btn = self.Button(self.entry_frame, text='RF',
