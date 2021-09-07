@@ -450,6 +450,7 @@ class Application:
         self.result_btn = None
         self.store_btn = None
         self.search_chkbox = None
+        self.template_name_txtbox = None
         self.lookup_btn = None
         self.close_lookup_btn = None
 
@@ -909,6 +910,11 @@ class Application:
 
         set_modal_dialog(settings)
 
+    def callback_preferences_user_template(self):
+        """Callback for Menu Preferences > User Template"""
+        self.search_chkbox_var.set(False)
+        self.search_chkbox.invoke()
+
     def build_menu(self):
         """Build menubar for Regex GUI."""
         menu_bar = tk.Menu(self.root)
@@ -930,7 +936,11 @@ class Application:
             label='Settings',
             command=lambda: self.callback_preferences_settings()
         )
-        # preferences.add_separator()
+        preferences.add_separator()
+        preferences.add_command(
+            label='User Template',
+            command=lambda: self.callback_preferences_user_template()
+        )
 
         help_.add_command(label='Documentation',
                           command=lambda: self.callback_help_documentation())
@@ -1475,6 +1485,7 @@ class Application:
                 self.copy_text_btn.configure(state=tk.DISABLED)
                 self.save_as_btn.configure(state=tk.DISABLED)
                 self.paste_text_btn.configure(state=tk.DISABLED)
+                self.clear_text_btn.configure(state=tk.DISABLED)
                 self.build_btn.configure(state=tk.DISABLED)
                 self.snippet_btn.configure(state=tk.DISABLED)
                 self.unittest_btn.configure(state=tk.DISABLED)
@@ -1486,6 +1497,7 @@ class Application:
                 self.input_textarea.configure(state=tk.DISABLED)
                 self.lookup_btn.grid(row=0, column=2, sticky=tk.W)
                 self.close_lookup_btn.grid(row=0, column=3, sticky=tk.W)
+                self.template_name_txtbox.focus()
 
                 input_txt = Application.get_textarea(self.input_textarea)
                 result_txt = Application.get_textarea(self.result_textarea)
@@ -1512,6 +1524,7 @@ class Application:
                 # self.copy_text_btn.configure(state=tk.NORMAL)
                 # self.save_as_btn.configure(state=tk.NORMAL)
                 self.paste_text_btn.configure(state=tk.NORMAL)
+                self.clear_text_btn.configure(state=tk.NORMAL)
                 self.build_btn.configure(state=tk.NORMAL)
                 self.snippet_btn.configure(state=tk.NORMAL)
                 self.unittest_btn.configure(state=tk.NORMAL)
@@ -1531,9 +1544,9 @@ class Application:
                 input_txt = Application.get_textarea(self.input_textarea)
                 pattern = r'#+\s+# *Template +is +generated '
                 if re.match(pattern, input_txt):
+                    self.test_data_btn_var.set('Test Data')
                     self.set_textarea(self.result_textarea, input_txt)
                 else:
-                    self.test_data_btn_var.set('Test Data')
                     self.set_textarea(
                         self.result_textarea,
                         self.snapshot.main_result_textarea,     # noqa
@@ -1755,11 +1768,12 @@ class Application:
         self.search_chkbox.grid(row=0, column=0, padx=(0, x), sticky=tk.W)
 
         # template name textbox
-        self.TextBox(
+        self.template_name_txtbox = self.TextBox(
             frame, width=46,
             name='main_template_name_textbox',
             textvariable=self.template_name_var
-        ).grid(row=0, column=1, sticky=tk.W)
+        )
+        self.template_name_txtbox.grid(row=0, column=1, sticky=tk.W)
 
         self.lookup_btn = self.Button(
             frame, text='Lookup',
