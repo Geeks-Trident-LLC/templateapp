@@ -641,8 +641,36 @@ class Application:
                 self.set_textarea(self.result_textarea, '')
                 self.snapshot.update(test_data=content)
                 title = 'Open {} + LOAD Test Data'.format(filename)
-                self.set_textarea(self.input_textarea, content, title=title)
+                self.set_title(title=title)
+                self.set_textarea(self.input_textarea, content)
                 self.input_textarea.focus()
+
+    def callback_load_td_file(self):
+        """Callback for Menu File > Load Test Data."""
+        filetypes = [
+            ('Text Files', '.txt', 'TEXT'),
+            ('All Files', '*'),
+        ]
+        filename = filedialog.askopenfilename(filetypes=filetypes)
+        if filename:
+            with open(filename) as stream:
+                content = stream.read()
+                self.test_data_btn.config(state=tk.NORMAL)
+                self.test_data_btn_var.set('Test Data')
+
+                input_data = Application.get_textarea(self.input_textarea)
+                if content.strip() == input_data.strip() or input_data.strip() == '':
+                    self.set_textarea(self.input_textarea, content)
+                    if input_data.strip() == '':
+                        self.set_textarea(self.result_textarea, '')
+                    self.input_textarea.focus()
+                else:
+                    self.set_textarea(self.result_textarea, content)
+
+                self.snapshot.update(test_data=content)
+                title = 'LOAD Test Data - {}'.format(filename)
+                self.snapshot.update(title=title)
+                self.set_title(title=title)
 
     def callback_help_documentation(self):
         """Callback for Menu Help > Getting Started."""
@@ -885,6 +913,7 @@ class Application:
         menu_bar.add_cascade(menu=help_, label='Help')
 
         file.add_command(label='Open', command=lambda: self.callback_open_file())
+        file.add_command(label='Load Test Data', command=lambda: self.callback_load_td_file())
         file.add_separator()
         file.add_command(label='Quit', command=lambda: self.callback_file_exit())
 
