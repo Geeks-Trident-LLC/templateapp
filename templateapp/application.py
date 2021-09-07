@@ -645,6 +645,12 @@ class Application:
         filename = filedialog.askopenfilename(filetypes=filetypes)
         if filename:
             with open(filename) as stream:
+                if self.search_chkbox_var.get():
+                    self.search_chkbox.invoke()
+
+                if self.snapshot.curr_app == 'backup_app':
+                    self.close_backup_btn.invoke()
+
                 content = stream.read()
                 self.test_data_btn.config(state=tk.NORMAL)
                 self.test_data_btn_var.set('Test Data')
