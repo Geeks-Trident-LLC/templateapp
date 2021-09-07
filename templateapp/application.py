@@ -453,6 +453,7 @@ class Application:
         self.template_name_txtbox = None
         self.lookup_btn = None
         self.close_lookup_btn = None
+        self.close_backup_btn = None
 
         self.curr_widget = None
         self.prev_widget = None
@@ -467,6 +468,7 @@ class Application:
         self.snapshot.update(result='')
         self.snapshot.update(template='')
         self.snapshot.update(is_built=False)
+        self.snapshot.update(curr_app='main_app')
         self.snapshot.update(switch_app_template='')
         self.snapshot.update(switch_app_user_data='')
         self.snapshot.update(switch_app_result_data='')
@@ -595,6 +597,7 @@ class Application:
 
     def shift_to_main_app(self):
         """Switch from backup app to main app"""
+        self.snapshot.update(curr_app='main_app')
         user_data = self.snapshot.switch_app_user_data      # noqa
         result_data = self.snapshot.switch_app_result_data  # noqa
         self.snapshot.update(switch_app_user_data='')
@@ -610,6 +613,7 @@ class Application:
 
     def shift_to_backup_app(self):
         """Switch from main app to backup app"""
+        self.snapshot.update(curr_app='backup_app')
         self.paned_window.remove(self.entry_frame)
         self.paned_window.insert(1, self.backup_frame)
 
@@ -641,6 +645,12 @@ class Application:
         filename = filedialog.askopenfilename(filetypes=filetypes)
         if filename:
             with open(filename) as stream:
+                if self.search_chkbox_var.get():
+                    self.search_chkbox.invoke()
+
+                if self.snapshot.curr_app == 'backup_app':
+                    self.close_backup_btn.invoke()
+
                 content = stream.read()
                 self.test_data_btn.config(state=tk.NORMAL)
                 self.test_data_btn_var.set('Test Data')
@@ -662,15 +672,26 @@ class Application:
         filename = filedialog.askopenfilename(filetypes=filetypes)
         if filename:
             with open(filename) as stream:
+                if self.search_chkbox_var.get():
+                    self.search_chkbox.invoke()
+
+                if self.snapshot.curr_app == 'backup_app':
+                    self.close_backup_btn.invoke()
+
                 content = stream.read()
                 self.test_data_btn.config(state=tk.NORMAL)
                 self.test_data_btn_var.set('Test Data')
 
                 input_data = Application.get_textarea(self.input_textarea)
+                result_data = Application.get_textarea(self.result_textarea)
                 if content.strip() == input_data.strip() or input_data.strip() == '':
                     self.set_textarea(self.input_textarea, content)
                     if input_data.strip() == '':
-                        self.set_textarea(self.result_textarea, '')
+                        pattern = r'#+\s+# *Template +is +generated '
+                        if not re.match(pattern, result_data):
+                            self.set_textarea(self.result_textarea, '')
+                        else:
+                            self.result_btn.configure(state=tk.NORMAL)
                     self.input_textarea.focus()
                 else:
                     self.set_textarea(self.result_textarea, content)
@@ -1873,11 +1894,12 @@ class Application:
             command=callback_app_backup_save_btn,
             width=btn_width
         ).pack(side=tk.LEFT)
-        self.Button(
+        self.close_backup_btn = self.Button(
             frame, text='Close',
             command=self.shift_to_main_app,
             width=btn_width
-        ).pack(side=tk.LEFT)
+        )
+        self.close_backup_btn.pack(side=tk.LEFT)
 
     def build_result(self):
         """Build result text"""
