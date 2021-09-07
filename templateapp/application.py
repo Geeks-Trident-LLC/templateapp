@@ -976,6 +976,14 @@ class Application:
                 except Exception as ex:
                     error = '{}: {}'.format(type(ex).__name__, ex)
                     create_msgbox(title='RegexBuilder Error', error=error)
+                    kwargs = self.get_template_args()
+                    factory = TemplateBuilder(user_data=user_data, debug=True, **kwargs)
+                    fmt = '# Please fix user_data to produce a good template\n{}'
+                    content = fmt.format(factory.bad_template)
+                    self.set_textarea(self.result_textarea, content)
+                    title = 'Bad Generated Template'
+                    self.snapshot.update(title=title)
+                    self.set_title(title=title)
 
                 if self.snapshot.template:  # noqa
                     self.store_btn.config(state=tk.NORMAL)
