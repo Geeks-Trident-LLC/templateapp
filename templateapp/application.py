@@ -600,7 +600,7 @@ class Application:
 
         stored_title = self.root.title().replace(' - ' + self._base_title, '')
         self.snapshot.update(stored_title=stored_title)
-        self.set_title(title=self.snapshot.title)
+        self.set_title(title=self.snapshot.title)   # noqa
 
     def shift_to_backup_app(self):
         """Switch from main app to backup app"""
@@ -609,7 +609,7 @@ class Application:
 
         title = self.root.title().replace(' - ' + self._base_title, '')
         self.snapshot.update(title=title)
-        stored_title = self.snapshot.stored_title or 'Storing Template'
+        stored_title = self.snapshot.stored_title or 'Storing Template'     # noqa
         self.set_title(title=stored_title)
 
     def callback_focus(self, event):
@@ -1333,7 +1333,7 @@ class Application:
                 )
             else:
                 self.test_data_btn_var.set('Test Data')
-                self.set_title(title=self.snapshot.title)
+                self.set_title(title=self.snapshot.title)   # noqa
                 self.set_textarea(
                     self.result_textarea,
                     self.snapshot.result  # noqa
@@ -1351,8 +1351,7 @@ class Application:
 
             if self.build_btn_var.get() == 'Search':
                 template = self.snapshot.template   # noqa
-
-            if self.build_btn_var.get() == 'Build':
+            else:
                 user_data = Application.get_textarea(self.input_textarea)
                 if not user_data:
                     create_msgbox(
@@ -1459,7 +1458,7 @@ class Application:
                 self.pytest_btn.configure(state=tk.NORMAL)
                 self.store_btn.configure(state=tk.NORMAL)
 
-                title_ = self.snapshot.title
+                title_ = self.snapshot.title    # noqa
                 if title_ != 'Searching Template' or title_ != self._base_title:
                     title = title_
                 else:
