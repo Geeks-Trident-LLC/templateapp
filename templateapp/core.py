@@ -253,7 +253,8 @@ class TemplateBuilder:
 
     def __init__(self, test_data='', user_data='', namespace='',
                  author='', email='', company='', description='',
-                 filename='', **other_options):
+                 filename='', debug=False,
+                 **other_options):
         self.test_data = TemplateBuilder.convert_to_string(test_data)
         self.user_data = TemplateBuilder.convert_to_string(user_data)
         self.namespace = str(namespace)
@@ -268,7 +269,7 @@ class TemplateBuilder:
         self.template = ''
         self.template_parser = None
         self.verified_message = ''
-        self.debug = False
+        self.debug = debug
         self.bad_template = ''
 
         self.build()
@@ -297,6 +298,11 @@ class TemplateBuilder:
 
             parsed_line = ParsedLine(line)
             statement = parsed_line.get_statement()
+            if statement.endswith(r'\$$'):
+                statement = '{}$$'.format(statement[:-3])
+            elif r'\$$ -> ' in statement:
+                statement = statement.replace(r'\$$ -> ', '$$ -> ')
+            statement = statement.replace(r'\$', r'\x24')
 
             if statement:
                 self.statements.append(statement)
@@ -388,7 +394,7 @@ class TemplateBuilder:
                 else:
                     self.logger.error(error)
                     self.bad_template = '# {}\n{}'.format(error, self.template)
-                    self.debug = False
+                    self.template = ''
         else:
             msg = 'user_data does not have any assigned variable for template.'
             raise TemplateBuilderInvalidFormat(msg)
