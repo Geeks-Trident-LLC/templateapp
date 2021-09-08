@@ -1,4 +1,4 @@
 textfsm
 regexapp
-dlquery
+dlapp
 pyyaml

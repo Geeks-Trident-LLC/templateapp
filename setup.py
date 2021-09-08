@@ -5,7 +5,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='templateapp',
-    version='0.1.2',
+    version='0.1.3',
     license='BSD-3-Clause',
     license_files=['LICENSE'],
     description='The application to generate template format.',
@@ -18,7 +18,7 @@ setup(
     install_requires=[
         'textfsm',
         'regexapp',
-        'dlquery',
+        'dlapp',
         'pyyaml'
     ],
     url='https://github.com/Geeks-Trident-LLC/templateapp',

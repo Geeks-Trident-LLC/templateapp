@@ -1,6 +1,6 @@
 """Module containing the attributes for templateapp."""
 
-__version__ = '0.1.2'
+__version__ = '0.1.3'
 version = __version__
 __edition__ = 'Community'
 edition = __edition__
