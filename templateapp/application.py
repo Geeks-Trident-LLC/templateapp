@@ -125,14 +125,14 @@ class Data:
     license_url = path.join(repo_url, 'blob/main/LICENSE')
     # TODO: Need to update wiki page for documentation_url instead of README.md.
     documentation_url = path.join(repo_url, 'blob/develop/README.md')
-    copyright_text = 'Copyright @ 2021-2030 Geeks Trident LLC.  All rights reserved.'
+    copyright_text = 'Copyright @ 2021-2040 Geeks Trident LLC.  All rights reserved.'
 
     @classmethod
     def get_license(cls):
         license_ = """
             BSD 3-Clause License
 
-            Copyright (c) 2021, Geeks Trident LLC
+            Copyright (c) 2021-2040, Geeks Trident LLC
             All rights reserved.
 
             Redistribution and use in source and binary forms, with or without
