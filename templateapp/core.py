@@ -311,7 +311,12 @@ class TemplateBuilder:
 
             if parsed_line.variables:
                 for v in parsed_line.variables:
-                    v not in self.variables and self.variables.append(v)
+                    is_identical = False
+                    for item in self.variables:
+                        if v.name == item.name and v.pattern == item.pattern:
+                            is_identical = True
+                            break
+                    not is_identical and self.variables.append(v)
 
     def build_template_comment(self):
         """return a template comment including created by, email, company,
