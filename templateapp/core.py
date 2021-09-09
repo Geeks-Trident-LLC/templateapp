@@ -143,7 +143,7 @@ class ParsedLine:
         statement = statement.replace('(?i)^', '^(?i)')
         spacer = '  ' if statement.startswith('^') else '  ^'
         statement = '{}{}'.format(spacer, statement)
-        if statement.endswith('$'):
+        if statement.endswith('$') and not statement.endswith(r'\$'):
             statement = '{}$'.format(statement)
         if self.template_op:
             statement = '{} -> {}'.format(statement, self.template_op)
