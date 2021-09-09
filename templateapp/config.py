@@ -21,6 +21,9 @@ __all__ = [
 
 
 class Data:
+    # main app
+    main_app_text = 'TemplateApp {} ({} Edition)'.format(version, edition)
+
     # packages
     regexapp_text = 'RegexApp v{}'.format(regexapp.version)
     regexapp_link = 'https://pypi.org/project/regexapp/'
@@ -28,7 +31,7 @@ class Data:
     dlapp_text = 'DLApp v{}'.format(dlapp.version)
     dlapp_link = 'https://pypi.org/project/dlapp/'
 
-    textfsm_text = 'PyYAML v{}'.format(textfsm.__version__)
+    textfsm_text = 'TextFSM v{}'.format(textfsm.__version__)
     textfsm_link = 'https://pypi.org/project/textfsm/'
 
     pyyaml_text = 'PyYAML v{}'.format(yaml.__version__)

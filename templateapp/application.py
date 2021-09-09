@@ -4,6 +4,7 @@ import tkinter as tk
 from tkinter import ttk
 from tkinter import filedialog
 from tkinter import messagebox
+from tkinter.font import Font
 
 import webbrowser
 from textwrap import indent
@@ -576,6 +577,61 @@ class Application:
         stored_title = self.snapshot.stored_title or 'Storing Template'     # noqa
         self.set_title(title=stored_title)
 
+    def create_custom_label(self, parent, text='', link='',
+                            increased_size=0, bold=False, underline=False,
+                            italic=False):
+        """create custom label
+
+        Parameters
+        ----------
+        parent (tkinter): a parent of widget.
+        text (str): a text of widget.
+        link (str): a label hyperlink.
+        increased_size (int): a increased size for font.
+        bold (bool): True will set bold font.
+        underline (bool): True will set to underline font.
+        italic (bool): True will set to italic font.
+
+        Returns
+        -------
+        tkinter.Label: a label widget.
+        """
+
+        def mouse_over(event):
+            if 'underline' not in event.widget.font:
+                event.widget.configure(
+                    font=event.widget.font + ['underline'],
+                    cursor='hand2'
+                )
+
+        def mouse_out(event):
+            event.widget.config(
+                font=event.widget.font,
+                cursor='arrow'
+            )
+
+        def mouse_press(event):
+            self.browser.open_new_tab(event.widget.link)
+
+        style = ttk.Style()
+        style.configure("Blue.TLabel", foreground="blue")
+        if link:
+            label = self.Label(parent, text=text, style='Blue.TLabel')
+            label.bind('<Enter>', mouse_over)
+            label.bind('<Leave>', mouse_out)
+            label.bind('<Button-1>', mouse_press)
+        else:
+            label = self.Label(parent, text=text)
+        font = Font(name='TkDefaultFont', exists=True, root=label)
+        font = [font.cget('family'), font.cget('size') + increased_size]
+        bold and font.append('bold')
+        underline and font.append('underline')
+        italic and font.append('italic')
+        label.configure(font=font)
+        label.font = font
+        label.link = link
+        return label
+
     def callback_focus(self, event):
         """Callback for widget selection"""
         try:
@@ -668,21 +724,6 @@ class Application:
     def callback_help_about(self):
         """Callback for Menu Help > About"""
 
-        def mouse_over(event):
-            event.widget.config(
-                font=event.widget.default_font + ('underline',),
-                cursor='hand2'
-            )
-
-        def mouse_out(event):
-            event.widget.config(
-                font=event.widget.default_font,
-                cursor='arrow'
-            )
-
-        def mouse_press(event):
-            self.browser.open_new_tab(event.widget.link)
-
         about = tk.Toplevel(self.root)
         self.set_title(widget=about, title='About')
         width, height = 460, 460
@@ -700,13 +741,10 @@ class Application:
         frame = self.Frame(paned_window, width=450, height=20)
         paned_window.add(frame, weight=4)
 
-        font_size = 12 if self.is_macos else 10
-        fmt = 'TemplateApp v{} ({} Edition)'
-        company_lbl = self.Label(
-            frame, text=fmt.format(version, edition),
-            font=('san-serif', font_size, 'bold')
-        )
-        company_lbl.grid(row=0, column=0, columnspan=2, sticky=tk.W)
+        self.create_custom_label(
+            frame, text=Data.main_app_text,
+            increased_size=2, bold=True
+        ).grid(row=0, column=0, columnspan=2, sticky=tk.W)
 
         # URL
         cell_frame = self.Frame(frame, width=450, height=5)
@@ -714,80 +752,39 @@ class Application:
 
         url = Data.repo_url
         self.Label(cell_frame, text='URL:').pack(side=tk.LEFT)
-        style = ttk.Style()
-        style.configure("Blue.TLabel", foreground="blue")
-        label = self.Label(
-            cell_frame, text=url, font=('sans-serif', font_size),
-            style='Blue.TLabel'
-        )
-        label.default_font = ('sans-serif', font_size)
-        label.pack(side=tk.LEFT)
-        label.link = url
 
-        label.bind('<Enter>', mouse_over)
-        label.bind('<Leave>', mouse_out)
-        label.bind('<Button-1>', mouse_press)
+        self.create_custom_label(
+            cell_frame, text=url, link=url
+        ).pack(side=tk.LEFT)
 
         # dependencies
-        self.Label(
-            frame, text='Pypi.com Dependencies:',
-            font=('sans-serif', font_size, 'underline')
+        self.create_custom_label(
+            frame, text='Pypi.com Dependencies:', bold=True
         ).grid(row=2, column=0, sticky=tk.W)
 
-        # regexapp package
-        import regexapp as rapp
-        text = 'RegexApp v{} ({} Edition)'.format(rapp.version, rapp.edition)
-        label = self.Label(
-            frame, text=text, font=('sans-serif', font_size),
-            style='Blue.TLabel'
-        )
-        label.default_font = ('sans-serif', font_size)
-        label.grid(row=3, column=0, padx=(20, 0), sticky=tk.W)
-        label.link = 'https://pypi.org/project/regexapp/'
-        label.bind('<Enter>', mouse_over)
-        label.bind('<Leave>', mouse_out)
-        label.bind('<Button-1>', mouse_press)
+        # RegexApp package
+        self.create_custom_label(
+            frame, text=Data.regexapp_text,
+            link=Data.regexapp_link
+        ).grid(row=3, column=0, padx=(20, 0), sticky=tk.W)
 
-        # dlapp package
-        import dlapp
-        text = 'DLApp v{} ({} Edition)'.format(dlapp.version, dlapp.edition)
-        label = self.Label(
-            frame, text=text, font=('sans-serif', font_size),
-            style='Blue.TLabel'
-        )
-        label.default_font = ('sans-serif', font_size)
-        label.grid(row=4, column=0, padx=(20, 0), pady=(0, 10), sticky=tk.W)
-        label.link = 'https://pypi.org/project/dlapp/'
-        label.bind('<Enter>', mouse_over)
-        label.bind('<Leave>', mouse_out)
-        label.bind('<Button-1>', mouse_press)
+        # DLApp package
+        self.create_custom_label(
+            frame, text=Data.dlapp_text,
+            link=Data.dlapp_link
+        ).grid(row=4, column=0, padx=(20, 0), pady=(0, 10), sticky=tk.W)
 
-        # textfsm package
-        import textfsm
-        text = 'TextFSM v{}'.format(textfsm.__version__)
-        label = self.Label(
-            frame, text=text, font=('sans-serif', font_size),
-            style='Blue.TLabel'
-        )
-        label.default_font = ('sans-serif', font_size)
-        label.grid(row=3, column=1, padx=(20, 0), sticky=tk.W)
-        label.link = 'https://pypi.org/project/textfsm/'
-        label.bind('<Enter>', mouse_over)
-        label.bind('<Leave>', mouse_out)
-        label.bind('<Button-1>', mouse_press)
+        # TextFSM package
+        self.create_custom_label(
+            frame, text=Data.textfsm_text,
+            link=Data.textfsm_link
+        ).grid(row=3, column=1, padx=(20, 0), sticky=tk.W)
 
         # PyYAML package
-        text = 'PyYAML v{}'.format(yaml.__version__)
-        label = self.Label(
-            frame, text=text, font=('sans-serif', font_size),
-            style='Blue.TLabel'
-        )
-        label.default_font = ('sans-serif', font_size)
-        label.grid(row=4, column=1, padx=(20, 0), pady=(0, 10), sticky=tk.W)
-        label.link = 'https://pypi.org/project/PyYAML/'
-        label.bind('<Enter>', mouse_over)
-        label.bind('<Leave>', mouse_out)
-        label.bind('<Button-1>', mouse_press)
+        self.create_custom_label(
+            frame, text=Data.pyyaml_text,
+            link=Data.pyyaml_link
+        ).grid(row=4, column=1, padx=(20, 0), pady=(0, 10), sticky=tk.W)
 
         # license textbox
         lframe = self.LabelFrame(
@@ -810,8 +807,13 @@ class Application:
         frame = self.Frame(paned_window, width=450, height=20)
         paned_window.add(frame, weight=1)
 
-        footer = self.Label(frame, text=Data.copyright_text)
-        footer.pack(side=tk.LEFT, pady=(10, 10))
+        self.Label(frame, text=Data.copyright_text).pack(side=tk.LEFT, pady=(10, 10))
+
+        self.create_custom_label(
+            frame, text=Data.company, link=Data.company_url
+        ).pack(side=tk.LEFT, pady=(10, 10))
+
+        self.Label(frame, text='.  All right reserved.').pack(side=tk.LEFT, pady=(10, 10))
 
         set_modal_dialog(about)
 
