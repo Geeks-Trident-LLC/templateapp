@@ -26,7 +26,11 @@ __all__ = [
 class Data:
     # app yaml files
     user_template_filename = str(
-        PurePath(Path.home(), '.templateapp', 'user_templates.yaml')
+        PurePath(
+            Path.home(),
+            '.geekstrident',
+            'templateapp',
+            'user_templates.yaml')
     )
 
     # main app
