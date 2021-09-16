@@ -3,6 +3,9 @@
 from os import path
 from textwrap import dedent
 
+from pathlib import Path
+from pathlib import PurePath
+
 import regexapp
 import dlapp
 import textfsm
@@ -21,6 +24,11 @@ __all__ = [
 
 
 class Data:
+    # app yaml files
+    user_template_filename = str(
+        PurePath(Path.home(), '.templateapp', 'user_templates.yaml')
+    )
+
     # main app
     main_app_text = 'TemplateApp {} ({} Edition)'.format(version, edition)
 
