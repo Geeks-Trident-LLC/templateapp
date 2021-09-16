@@ -152,7 +152,7 @@ class UserTemplate:
     write(template_name, data) -> str
     """
     def __init__(self):
-        self.filename = str(PurePath(Path.home(), '.templateapp', 'user_templates.yaml'))
+        self.filename = Data.user_template_filename
         self.status = ''
         self.content = ''
 
