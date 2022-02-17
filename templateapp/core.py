@@ -42,16 +42,16 @@ class ParsedLine:
     text (str): a data.
     line (str): a line data.
     template_op (str): template operator.
-    ignore_case (bool): a case insensitive flag.
-    is_comment (bool): a indicator for comment.
+    ignore_case (bool): a case-insensitive flag.
+    is_comment (bool): an indicator for comment.
     comment_str (str): a comment text.
-    is_kept (bool): a indicator to keep AS-IS.
+    is_kept (bool): an indicator to keep AS-IS.
     kept_str (str): a kept text.
     variables (list): a list of variables.
 
-    Properties
+    Properties  # noqa
     ----------
-    is_empty (bool): True if a line doesnt have data, otherwise False.
+    is_empty (bool): True if a line does not have data, otherwise False.
     is_a_word (bool): True if text is a single word, otherwise False.
     is_not_containing_letter (bool): True if line is not containing any letter,
             otherwise, False.
@@ -136,7 +136,10 @@ class ParsedLine:
                 if re.search(r'\s', self.line):
                     statement = pat_obj
                 else:
-                    statement = self.line
+                    if '(' in self.line and self.line.endswith(')'):
+                        statement = pat_obj if not pat_obj.endswith(')') else self.line
+                    else:
+                        statement = self.line
             except Exception as ex:     # noqa
                 statement = pat_obj
 
@@ -360,7 +363,7 @@ class TemplateBuilder:
             start = m.end()
         else:
             if lst:
-                after_match = m.string[m.end():]
+                after_match = m.string[m.end():]    # noqa
                 if after_match.strip():
                     for line in after_match.splitlines():
                         if line.strip():
