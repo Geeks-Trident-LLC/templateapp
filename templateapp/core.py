@@ -116,17 +116,6 @@ class ParsedLine:
 
         pat_obj = LinePattern(self.line, ignore_case=self.ignore_case)
 
-        if self.is_comment:
-            text = self.text[8:].strip()
-            return '  # {}'.format(text)
-
-        if self.is_kept:
-            text = self.text
-            if re.match(r' *\^', text):
-                return '  {}'.format(text.lstrip())
-            else:
-                return '  ^{}'.format(text)
-
         if pat_obj.variables:
             self.variables = pat_obj.variables[:]
             statement = pat_obj.statement
@@ -186,26 +175,22 @@ class ParsedLine:
         else:
             text = self.text
 
-        pat = r'(?P<flag>(ignore_case|comment|keep) )?(?P<line>.*)'
+        pat = r'^(?P<flag>(ignore_case|comment|keep)__ )?(?P<line>.*)'
         match = re.match(pat, text, re.I)
         if match:
             flag = match.group('flag') or ''
-            flag = flag.strip()
+            flag = flag.strip().rstrip('_')
             self.ignore_case = flag == 'ignore_case'
             self.is_comment = flag == 'comment'
             self.is_kept = flag == 'keep'
             self.line = match.group('line') or ''
 
             if self.is_comment:
-                txt = self.text[8:].strip().lstrip('#')
-                self.comment_text = '  # {}'.format(txt)
+                self.comment_text = '  # {}'.format(self.line)
 
             if self.is_kept:
-                txt = self.text[5:]
-                if txt.lstrip().startswith('^'):
-                    self.kept_text = '  {}'.format(txt.lstrip())
-                else:
-                    self.kept_text = '  ^{}'.format(txt)
+                self.kept_text = '  ^{}'.format(self.line.strip().lstrip('^'))
+
         else:
             error = 'Invalid format - {!r}'.format(self.text)
             raise TemplateParsedLineError(error)
