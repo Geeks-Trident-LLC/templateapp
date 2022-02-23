@@ -38,7 +38,7 @@ def test_textfsm_template(template_, test_data_):
     print("Test data:\n----------\n%s" % test_data_)
     print("\n%s\n" % ("+" * 40))
 
-    # show textfms template
+    # show textfsm template
     print("Template:\n---------\n%s" % template_)
 
     stream = StringIO(template_)

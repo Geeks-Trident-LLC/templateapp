@@ -622,7 +622,7 @@ class TemplateBuilder:
                 print("Test data:\n----------\n%s" % test_data_)
                 print("\n%s\n" % ("+" * 40))
                 
-                # show textfms template
+                # show textfsm template
                 print("Template:\n---------\n%s" % template_)
                 
                 stream = StringIO(template_)
