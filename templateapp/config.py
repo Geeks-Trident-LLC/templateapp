@@ -11,7 +11,7 @@ import dlapp
 import textfsm
 import yaml
 
-__version__ = '0.1.5'
+__version__ = '0.1.6'
 version = __version__
 __edition__ = 'Community'
 edition = __edition__
