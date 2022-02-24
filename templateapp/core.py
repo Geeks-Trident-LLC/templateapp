@@ -175,18 +175,19 @@ class ParsedLine:
         else:
             text = self.text
 
-        pat = r'^(?P<flag>(ignore_case|comment|keep)__ )?(?P<line>.*)'
+        pat = r'^(?P<flag>(ignore_case|comment|keep)__+ )?(?P<line>.*)'
         match = re.match(pat, text, re.I)
         if match:
-            flag = match.group('flag') or ''
-            flag = flag.strip().rstrip('_')
+            value = match.group('flag') or ''
+            flag = value.lower().strip().rstrip('_')
             self.ignore_case = flag == 'ignore_case'
             self.is_comment = flag == 'comment'
             self.is_kept = flag == 'keep'
             self.line = match.group('line') or ''
 
             if self.is_comment:
-                self.comment_text = '  # {}'.format(self.line)
+                prefix = '  ' if value.count('_') == 2 else ''
+                self.comment_text = '{}# {}'.format(prefix, self.line)
 
             if self.is_kept:
                 self.kept_text = '  ^{}'.format(self.line.strip().lstrip('^'))
