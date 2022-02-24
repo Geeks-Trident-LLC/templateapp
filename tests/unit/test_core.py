@@ -53,11 +53,11 @@ def tc_info():
     """
 
     other_user_data = """
-        comment Title column consists a list of mixed words
-        comment Price column is number.  It can be digits or float number
-        comment Genre column is a group of words
+        comment__ Title column consists a list of mixed words
+        comment__ Price column is number.  It can be digits or float number
+        comment__ Genre column is a group of words
         Title                   Price       Genre
-        keep =+ +=+ +=+
+        keep__ =+ +=+ +=+
         mixed_words(var_title)   number(var_price)   words(var_genre) -> Record
     """
 
@@ -129,8 +129,8 @@ class TestParsedLine:
         [
             ('', '', '', False),
             ('abc xyz', 'abc xyz', '', False),
-            ('ignore_case abc xyz', 'abc xyz', '', True),
-            ('ignore_case abc xyz -> Record', 'abc xyz', 'Record', True)
+            ('ignore_case__ abc xyz', 'abc xyz', '', True),
+            ('ignore_case__ abc xyz -> Record', 'abc xyz', 'Record', True)
         ]
     )
     def test_parsedline_attribute(self, data, line, template_op, ignore_case):
