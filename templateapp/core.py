@@ -49,7 +49,7 @@ class ParsedLine:
     kept_str (str): a kept text.
     variables (list): a list of variables.
 
-    Properties  # noqa
+    Properties
     ----------
     is_empty (bool): True if a line does not have data, otherwise False.
     is_a_word (bool): True if text is a single word, otherwise False.
@@ -337,6 +337,7 @@ class TemplateBuilder:
         lst = []
         pat = r'[\r\n]+[a-zA-Z]\w*([\r\n]+|$)'
         start = 0
+        m = None
         for m in re.finditer(pat, self.template):
             before_match = m.string[start:m.start()]
             state = m.group().strip()
@@ -348,8 +349,8 @@ class TemplateBuilder:
             lst.append(state)
             start = m.end()
         else:
-            if lst:
-                after_match = m.string[m.end():]    # noqa
+            if m and lst:
+                after_match = m.string[m.end():]
                 if after_match.strip():
                     for line in after_match.splitlines():
                         if line.strip():
