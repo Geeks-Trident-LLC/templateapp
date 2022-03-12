@@ -12,7 +12,7 @@ def run_gui_application(options):
 
     Parameters
     ----------
-    options (argparse.Namespace): a argparse.Namespace instance.
+    options (argparse.Namespace): argparse.Namespace instance.
 
     Returns
     -------
@@ -25,14 +25,33 @@ def run_gui_application(options):
         sys.exit(0)
 
 
+def show_dependency(options):
+    if options.dependency:
+        from platform import uname, python_version
+        from templateapp.config import Data
+        lst = [
+            Data.main_app_text,
+            'Platform: {0.system} {0.release} - Python {1}'.format(
+                uname(), python_version()
+            ),
+            '--------------------',
+            'Dependencies:'
+        ]
+
+        for pkg in Data.get_dependency().values():
+            lst.append('  + Package: {0[package]}'.format(pkg))
+            lst.append('             {0[url]}'.format(pkg))
+
+        width = max(len(item) for item in lst)
+        txt = '\n'.join('| {1:{0}} |'.format(width, item) for item in lst)
+        print('+-{0}-+\n{1}\n+-{0}-+'.format(width * '-', txt))
+        sys.exit(0)
+
+
 class Cli:
     """templateapp console CLI application."""
 
     def __init__(self):
-        self.filename = ''
-        self.filetype = ''
-        self.result = None
-
         parser = argparse.ArgumentParser(
             prog='templateapp',
             usage='%(prog)s [options]',
@@ -44,14 +63,16 @@ class Cli:
             help='launch a template GUI application'
         )
 
+        parser.add_argument(
+            '-d', '--dependency', action='store_true',
+            help='Show TemplateApp dependent package(s).'
+        )
+
         self.parser = parser
+        self.options = self.parser.parse_args()
 
-    def validate_cli_flags(self, options):
+    def validate_cli_flags(self):
         """Validate argparse `options`.
-
-        Parameters
-        ----------
-        options (argparse.Namespace): a argparse.Namespace instance.
 
         Returns
         -------
@@ -59,7 +80,7 @@ class Cli:
         all flags are empty or False, otherwise, return True
         """
 
-        chk = any(bool(i) for i in vars(options).values())
+        chk = any(bool(i) for i in vars(self.options).values())
 
         if not chk:
             self.parser.print_help()
@@ -69,9 +90,9 @@ class Cli:
 
     def run(self):
         """Take CLI arguments, parse it, and process."""
-        options = self.parser.parse_args()
-        self.validate_cli_flags(options)
-        run_gui_application(options)
+        show_dependency(self.options)
+        self.validate_cli_flags()
+        run_gui_application(self.options)
 
 
 def execute():
