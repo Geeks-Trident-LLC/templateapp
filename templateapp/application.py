@@ -1,6 +1,21 @@
 """Module containing the logic for the Template application."""
 
-import tkinter as tk
+try:
+    import tkinter as tk
+except ModuleNotFoundError:
+    import sys
+    from platform import python_version as py_version
+    items = ["Failed to launch TemplateApp application because",
+             "Python{} binary doesn't have tkinter module.".format(py_version()),
+             "Please install tkinter module and try it again."]
+    max_len = max(len(item) for item in items)
+    txt = '\n'.join('| {} |'.format(item.ljust(max_len)) for item in items)
+    txt = '+-{0}-+\n{1}\n+-{0}-+'.format(max_len * '-', txt)
+    print(txt)
+    sys.exit(1)
+except Exception as exc:
+    raise exc
+
 from tkinter import ttk
 from tkinter import filedialog
 from tkinter import messagebox
