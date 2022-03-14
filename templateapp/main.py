@@ -2,9 +2,11 @@
 
 import sys
 import argparse
-# from os import path
-# from textwrap import dedent
+import re
+import yaml
+
 from templateapp.application import Application
+from templateapp import TemplateBuilder
 
 
 def run_gui_application(options):
@@ -64,12 +66,42 @@ class Cli:
         )
 
         parser.add_argument(
+            '-u', '--user-data', type=str, dest='user_data',
+            default='',
+            help='Required flag: user snippet for template generation.'
+        )
+
+        parser.add_argument(
+            '-t', '--test-data', type=str, dest='test_data',
+            default='',
+            help='User test data.'
+        )
+
+        parser.add_argument(
+            '-r', '--run-test', action='store_true', dest='test',
+            help='To perform test between test data vs generated template.'
+        )
+
+        parser.add_argument(
+            '-p', '--platform', type=str, choices=['unittest', 'pytest', 'snippet'],
+            default='',
+            help='A generated script choice for unittest or pytest test framework.'
+        )
+
+        parser.add_argument(
+            '-s', '--setting', type=str,
+            default='',
+            help='Settings for generated test script.'
+        )
+
+        parser.add_argument(
             '-d', '--dependency', action='store_true',
             help='Show TemplateApp dependent package(s).'
         )
 
         self.parser = parser
         self.options = self.parser.parse_args()
+        self.kwargs = dict()
 
     def validate_cli_flags(self):
         """Validate argparse `options`.
@@ -77,21 +109,135 @@ class Cli:
         Returns
         -------
         bool: show ``self.parser.print_help()`` and call ``sys.exit(1)`` if
-        all flags are empty or False, otherwise, return True
+        user_data flag is empty, otherwise, return True
         """
 
-        chk = any(bool(i) for i in vars(self.options).values())
-
-        if not chk:
+        if not self.options.user_data:
             self.parser.print_help()
             sys.exit(1)
 
+        pattern = r'file( *name)?:: *(?P<filename>\S*)'
+        m = re.match(pattern, self.options.user_data, re.I)
+        if m:
+            try:
+                with open(m.group('filename')) as stream:
+                    self.options.user_data = stream.read()
+            except Exception as ex:
+                failure = '*** {}: {}'.format(type(ex).__name__, ex)
+                print(failure)
+                sys.exit(1)
+
+        if self.options.test_data:
+            m = re.match(pattern, self.options.test_data, re.I)
+            if m:
+                try:
+                    with open(m.group('filename')) as stream:
+                        self.options.test_data = stream.read()
+                except Exception as ex:
+                    failure = '*** {}: {}'.format(type(ex).__name__, ex)
+                    print(failure)
+                    sys.exit(1)
+
+        if self.options.setting:
+            setting = self.options.setting
+            m = re.match(pattern, setting, re.I)
+            if m:
+                try:
+                    with open(m.group('filename')) as stream:
+                        content = stream.read()
+                except Exception as ex:
+                    failure = '*** {}: {}'.format(type(ex).__name__, ex)
+                    print(failure)
+                    sys.exit(1)
+            else:
+                other_pat = r'''(?x)(
+                    author|email|company|filename|
+                    description|namespace|tabular): *'''
+                content = re.sub(r' *: *', r': ', setting)
+                content = re.sub(other_pat, r'\n\1: ', content)
+                content = '\n'.join(line.strip(', ') for line in content.splitlines())
+
+            if content:
+                try:
+                    kwargs = yaml.load(content, Loader=yaml.SafeLoader)
+                    if isinstance(kwargs, dict):
+                        self.kwargs = kwargs
+                    else:
+                        failure = '*** INVALID-SETTING: {}'.format(setting)
+                        print(failure)
+                        sys.exit(1)
+                except Exception as ex:
+                    failure = '*** LOADING-SETTING - {}'.format(ex)
+                    print(failure)
+                    sys.exit(1)
+
         return True
+
+    def build_template(self):
+        """Build template"""
+        try:
+            factory = TemplateBuilder(
+                user_data=self.options.user_data,
+                **self.kwargs
+            )
+            factory.build()
+            print(factory.template)
+            sys.exit(0)
+        except Exception as ex:
+            fmt = '*** {}: {}\n*** Failed to generate template from\n{}'
+            print(fmt.format(type(ex).__name__, ex, self.options.user_data))
+            sys.exit(1)
+
+    def build_test_script(self):
+        """Build test script"""
+        platform = self.options.platform.lower()
+        if platform:
+            tbl = dict(unittest='create_unittest', pytest='create_pytest')
+            method_name = tbl.get(platform, 'create_python_test')
+            try:
+                factory = TemplateBuilder(
+                    user_data=self.options.user_data,
+                    test_data=self.options.test_data,
+                    **self.kwargs
+                )
+                factory.build()
+                test_script = getattr(factory, method_name)()
+                print('\n{}\n'.format(test_script))
+                sys.exit(0)
+            except Exception as ex:
+                fmt = '*** {}: {}\n*** Failed to test script from\n{}'
+                print(fmt.format(type(ex).__name__, ex, self.options.user_data))
+                sys.exit(1)
+        else:
+            self.build_template()
+
+    def run_test(self):
+        """Run test"""
+        if self.options.test:
+            try:
+                factory = TemplateBuilder(
+                    user_data=self.options.user_data,
+                    test_data=self.options.test_data,
+                    **self.kwargs
+                )
+                factory.build()
+                'debug' not in self.kwargs and self.kwargs.update(dict(debug=True))
+                factory.verify(**self.kwargs)
+                sys.exit(0)
+            except Exception as ex:
+                fmt = '*** {}: {}\n*** Failed to run template test from\n{}'
+                print(fmt.format(type(ex).__name__, ex, self.options.user_data))
+                sys.exit(1)
 
     def run(self):
         """Take CLI arguments, parse it, and process."""
         show_dependency(self.options)
         self.validate_cli_flags()
+        if not self.options.test_data:
+            self.build_template()
+        else:
+            self.run_test()
+            self.build_test_script()
         run_gui_application(self.options)
 
 
