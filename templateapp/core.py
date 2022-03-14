@@ -11,6 +11,8 @@ from textwrap import dedent
 from regexapp import LinePattern
 from regexapp.core import enclose_string
 
+from dlapp.collection import Tabular
+
 from templateapp.exceptions import TemplateParsedLineError
 from templateapp.exceptions import TemplateBuilderError
 from templateapp.exceptions import TemplateBuilderInvalidFormat
@@ -394,13 +396,15 @@ class TemplateBuilder:
             msg = 'user_data does not have any assigned variable for template.'
             raise TemplateBuilderInvalidFormat(msg)
 
-    def show_debug_info(self, test_result=None, expected_result=None):
+    def show_debug_info(self, test_result=None, expected_result=None,
+                        tabular=False):
         """show debug information
         
         Parameters
         ----------
         test_result (list): a list of dictionary.
         expected_result (list): a list of dictionary.
+        tabular (bool): show result in tabular format.  Default is False.
         """
         if self.verified_message:
             lst = [
@@ -422,16 +426,30 @@ class TemplateBuilder:
                     '------------',
                     pformat(test_result)
                 ]
-            msg = '\n'.join(lst) + '\n'
-            self.logger.debug(msg)
 
-    def verify(self, expected_rows_count=None, expected_result=None, debug=False):
+            if test_result:
+                lst += [
+                    'Test result:',
+                    '------------',
+                    Tabular(test_result).get() if tabular else pformat(test_result)
+                ]
+
+            lst += ['Verified message:',
+                    '-----------------',
+                    self.verified_message]
+
+            msg = '\n'.join(lst) + '\n'
+            print(msg)
+
+    def verify(self, expected_rows_count=None, expected_result=None,
+               tabular=False, debug=False):
         """verify test_data via template
         
         Parameters
         ----------
         expected_rows_count (int): total number of rows.
         expected_result (list): a list of dictionary.
+        tabular (bool): show result in tabular format.  Default is False.
         debug (bool): True will show debug info.  Default is False.
 
         Returns
@@ -466,15 +484,18 @@ class TemplateBuilder:
             if expected_result is not None:
                 chk = rows == expected_result
                 is_verified &= chk
-                if not chk:
-                    msg = 'Parsed result is as same as expected result.'
-                    if self.verified_message:
-                        self.verified_message += '\n{}'.format(msg)
-                    else:
-                        self.verified_message = msg
 
-            if not is_verified and debug:
-                self.show_debug_info(test_result=rows, expected_result=expected_result)
+                fmt = 'Parsed result is {} expected result.'
+                msg = fmt.format('AS SAME AS' if chk else 'NOT the same with')
+                self.verified_message += '\n{}'.format(msg).strip()
+
+            if is_verified and not self.verified_message:
+                self.verified_message = 'Parsed result has some data.'
+
+            if debug:
+                self.show_debug_info(test_result=rows,
+                                     expected_result=expected_result,
+                                     tabular=tabular)
 
             return is_verified
 

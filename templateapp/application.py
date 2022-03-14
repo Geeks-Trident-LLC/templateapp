@@ -1,6 +1,21 @@
 """Module containing the logic for the Template application."""
 
-import tkinter as tk
+try:
+    import tkinter as tk
+except ModuleNotFoundError:
+    import sys
+    from platform import python_version as py_version
+    items = ["Failed to launch TemplateApp application because",
+             "Python{} binary doesn't have tkinter module.".format(py_version()),
+             "Please install tkinter module and try it again."]
+    max_len = max(len(item) for item in items)
+    txt = '\n'.join('| {} |'.format(item.ljust(max_len)) for item in items)
+    txt = '+-{0}-+\n{1}\n+-{0}-+'.format(max_len * '-', txt)
+    print(txt)
+    sys.exit(1)
+except Exception as exc:
+    raise exc
+
 from tkinter import ttk
 from tkinter import filedialog
 from tkinter import messagebox
@@ -39,7 +54,7 @@ def get_relative_center_location(parent, width, height):
     ----------
     parent (tkinter): tkinter widget instance.
     width (int): a width of a child window.
-    height (int): a height of a child window..
+    height (int): a height of a child window.
 
     Returns
     -------
@@ -76,13 +91,13 @@ def create_msgbox(title=None, error=None, warning=None, info=None,
     any: a string or boolean result
     """
     if error:
-        # a return result is a "ok" string
+        # a return result is an "ok" string
         result = messagebox.showerror(title=title, message=error, **options)
     elif warning:
-        # a return result is a "ok" string
+        # a return result is an "ok" string
         result = messagebox.showwarning(title=title, message=warning, **options)
     elif info:
-        # a return result is a "ok" string
+        # a return result is an "ok" string
         result = messagebox.showinfo(title=title, message=info, **options)
     elif question:
         # a return result is a "yes" or "no" string
@@ -100,7 +115,7 @@ def create_msgbox(title=None, error=None, warning=None, info=None,
         # a return result is boolean or None
         result = messagebox.askyesnocancel(title=title, message=yesnocancel, **options)
     else:
-        # a return result is a "ok" string
+        # a return result is an "ok" string
         result = messagebox.showinfo(title=title, message=info, **options)
 
     return result
@@ -587,7 +602,7 @@ class Application:
         parent (tkinter): a parent of widget.
         text (str): a text of widget.
         link (str): a label hyperlink.
-        increased_size (int): a increased size for font.
+        increased_size (int): increased size for font.
         bold (bool): True will set bold font.
         underline (bool): True will set to underline font.
         italic (bool): True will set to italic font.

@@ -31,6 +31,7 @@ setup(
     test_suite='tests',
     entry_points={
         'console_scripts': [
+            'templateapp = templateapp.main:execute',
             'template-app = templateapp.application:execute',
         ]
     },
