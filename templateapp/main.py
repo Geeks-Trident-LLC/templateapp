@@ -180,7 +180,6 @@ class Cli:
                 user_data=self.options.user_data,
                 **self.kwargs
             )
-            factory.build()
             print(factory.template)
             sys.exit(0)
         except Exception as ex:
@@ -200,7 +199,6 @@ class Cli:
                     test_data=self.options.test_data,
                     **self.kwargs
                 )
-                factory.build()
                 test_script = getattr(factory, method_name)()
                 print('\n{}\n'.format(test_script))
                 sys.exit(0)
@@ -220,7 +218,6 @@ class Cli:
                     test_data=self.options.test_data,
                     **self.kwargs
                 )
-                factory.build()
                 'debug' not in self.kwargs and self.kwargs.update(dict(debug=True))
                 factory.verify(**self.kwargs)
                 sys.exit(0)
