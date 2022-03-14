@@ -5,7 +5,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='templateapp',
-    version='0.1.6',
+    version='0.1.7',
     license='BSD-3-Clause',
     license_files=['LICENSE'],
     description='The application to generate template format.',
