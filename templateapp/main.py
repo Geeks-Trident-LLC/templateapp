@@ -89,9 +89,9 @@ class Cli:
         )
 
         parser.add_argument(
-            '-s', '--setting', type=str,
+            '--config', type=str,
             default='',
-            help='Settings for generated test script.'
+            help='Config settings for generated test script.'
         )
 
         parser.add_argument(
@@ -138,9 +138,9 @@ class Cli:
                     print(failure)
                     sys.exit(1)
 
-        if self.options.setting:
-            setting = self.options.setting
-            m = re.match(pattern, setting, re.I)
+        if self.options.config:
+            config = self.options.config
+            m = re.match(pattern, config, re.I)
             if m:
                 try:
                     with open(m.group('filename')) as stream:
@@ -153,7 +153,7 @@ class Cli:
                 other_pat = r'''(?x)(
                     author|email|company|filename|
                     description|namespace|tabular): *'''
-                content = re.sub(r' *: *', r': ', setting)
+                content = re.sub(r' *: *', r': ', config)
                 content = re.sub(other_pat, r'\n\1: ', content)
                 content = '\n'.join(line.strip(', ') for line in content.splitlines())
 
@@ -163,11 +163,11 @@ class Cli:
                     if isinstance(kwargs, dict):
                         self.kwargs = kwargs
                     else:
-                        failure = '*** INVALID-SETTING: {}'.format(setting)
+                        failure = '*** INVALID-CONFIG: {}'.format(config)
                         print(failure)
                         sys.exit(1)
                 except Exception as ex:
-                    failure = '*** LOADING-SETTING - {}'.format(ex)
+                    failure = '*** LOADING-CONFIG-ERROR - {}'.format(ex)
                     print(failure)
                     sys.exit(1)
 
@@ -218,8 +218,13 @@ class Cli:
                     test_data=self.options.test_data,
                     **self.kwargs
                 )
-                'debug' not in self.kwargs and self.kwargs.update(dict(debug=True))
-                factory.verify(**self.kwargs)
+                kwargs = dict(
+                    expected_rows_count=self.kwargs.get('expected_rows_count', None),
+                    expected_result=self.kwargs.get('expected_result', None),
+                    tabular=self.kwargs.get('tabular', False),
+                    debug=True
+                )
+                factory.verify(**kwargs)
                 sys.exit(0)
             except Exception as ex:
                 fmt = '*** {}: {}\n*** Failed to run template test from\n{}'
