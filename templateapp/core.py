@@ -12,6 +12,7 @@ from regexapp import LinePattern
 from regexapp.core import enclose_string
 
 from dlapp.collection import Tabular
+from dlapp.utils import Printer
 
 from templateapp.exceptions import TemplateParsedLineError
 from templateapp.exceptions import TemplateBuilderError
@@ -407,39 +408,22 @@ class TemplateBuilder:
         tabular (bool): show result in tabular format.  Default is False.
         """
         if self.verified_message:
-            lst = [
-                '*** {}'.format(self.verified_message),
-                '==' * 40,
-                'Template:',
-                '---------',
-                self.template,
-                'Test data:',
-                '----------',
-                self.test_data,
-            ]
-            if test_result is not None and expected_result is not None:
-                lst += [
-                    'Expected result:',
-                    '------------',
-                    pformat(expected_result),
-                    'Test result:',
-                    '------------',
-                    pformat(test_result)
-                ]
+            width = 76
+            printer = Printer()
+            printer.print('Template:'.ljust(width))
+            print(self.template + '\n')
+            printer.print('Test Data:'.ljust(width))
+            print(self.test_data + '\n')
+            if expected_result is not None:
+                printer.print('Expected Result:'.ljust(width))
+                print(pformat(expected_result) + '\n')
+            if test_result is not None:
+                printer.print('Test Result:'.ljust(width))
+                txt = Tabular(test_result).get() if tabular else pformat(test_result)
+                print(txt + '\n')
 
-            if test_result:
-                lst += [
-                    'Test result:',
-                    '------------',
-                    Tabular(test_result).get() if tabular else pformat(test_result)
-                ]
-
-            lst += ['Verified message:',
-                    '-----------------',
-                    self.verified_message]
-
-            msg = '\n'.join(lst) + '\n'
-            print(msg)
+            verified_msg = 'Verified Message: {}'.format(self.verified_message)
+            printer.print(verified_msg.ljust(width))
 
     def verify(self, expected_rows_count=None, expected_result=None,
                tabular=False, debug=False):
@@ -478,19 +462,26 @@ class TemplateBuilder:
                 chk = expected_rows_count == rows_count
                 is_verified &= chk
                 if not chk:
-                    fmt = 'Total parsed rows is {} while expected rows is {}.'
+                    fmt = 'Parsed-row-count is {} while expected-row-count is {}.'
                     self.verified_message = fmt.format(rows_count, expected_rows_count)
+                else:
+                    fmt = 'Parsed-row-count and expected-row-count are {}.'
+                    self.verified_message = fmt.format(expected_rows_count)
 
             if expected_result is not None:
                 chk = rows == expected_result
                 is_verified &= chk
 
-                fmt = 'Parsed result is {} expected result.'
-                msg = fmt.format('AS SAME AS' if chk else 'NOT the same with')
-                self.verified_message += '\n{}'.format(msg).strip()
+                if chk:
+                    msg = 'Parsed result and expected result are matched.'
+                else:
+                    msg = 'Parsed result and expected result are different.'
+
+                msg = '{}\n{}'.format(self.verified_message, msg,)
+                self.verified_message = msg.strip()
 
             if is_verified and not self.verified_message:
-                self.verified_message = 'Parsed result has some data.'
+                self.verified_message = 'Parsed result has record(s).'
 
             if debug:
                 self.show_debug_info(test_result=rows,
