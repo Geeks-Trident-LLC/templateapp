@@ -37,16 +37,16 @@ class Data:
     main_app_text = 'TemplateApp {} ({} Edition)'.format(version, edition)
 
     # packages
-    regexapp_text = 'RegexApp v{}'.format(regexapp.version)
+    regexapp_text = 'regexapp v{}'.format(regexapp.version)
     regexapp_link = 'https://pypi.org/project/regexapp/'
 
-    dlapp_text = 'DLApp v{}'.format(dlapp.version)
+    dlapp_text = 'dlapp v{}'.format(dlapp.version)
     dlapp_link = 'https://pypi.org/project/dlapp/'
 
-    textfsm_text = 'TextFSM v{}'.format(textfsm.__version__)
+    textfsm_text = 'textfsm v{}'.format(textfsm.__version__)
     textfsm_link = 'https://pypi.org/project/textfsm/'
 
-    pyyaml_text = 'PyYAML v{}'.format(yaml.__version__)
+    pyyaml_text = 'pyyaml v{}'.format(yaml.__version__)
     pyyaml_link = 'https://pypi.org/project/PyYAML/'
 
     # company
